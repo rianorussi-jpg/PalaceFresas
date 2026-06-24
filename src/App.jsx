@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
 import emailjs from "@emailjs/browser";
 
-// ─── EMAILJS CONFIG ───────────────────────────────────────────────────────────
-const EJS_SERVICE  = "service_gdnezgh";
+const EJS_SERVICE     = "service_gdnezgh";
 const EJS_TPL_CLIENTE = "template_ko2otxk";
 const EJS_TPL_TIENDA  = "template_lmdnq8m";
-const EJS_PUBLIC   = "fsB-EreO4-4UsYo9Y";
-
-// ─── TELEGRAM CONFIG ──────────────────────────────────────────────────────────
-const TG_TOKEN   = "8561046903:AAEQl1KQSQeNGAQ0si63MbzRePhzGQytXdI";
-const TG_CHAT_ID = "7681123167";
+const EJS_PUBLIC      = "fsB-EreO4-4UsYo9Y";
+const TG_TOKEN        = "8561046903:AAEQl1KQSQeNGAQ0si63MbzRePhzGQytXdI";
+const TG_CHAT_ID      = "7681123167";
 
 async function sendTelegram(text) {
   try {
@@ -18,12 +15,9 @@ async function sendTelegram(text) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: "HTML" }),
     });
-  } catch (e) {
-    console.error("Telegram error:", e);
-  }
+  } catch (e) { console.error("Telegram error:", e); }
 }
 
-// ─── THEME ────────────────────────────────────────────────────────────────────
 const bg     = "#fff5f7";
 const card   = "#ffffff";
 const cardHi = "#fdedf0";
@@ -34,37 +28,45 @@ const text   = "#1a1a1a";
 const muted  = "#9a6070";
 const pill   = "#fdedf0";
 
-// ─── MENU DATA ────────────────────────────────────────────────────────────────
 const MENU = {
   esquites: {
-    label: "Esquites",
-    emoji: "🌽",
+    label: "Esquites", emoji: "🌽",
     items: [
       { id:"esquites-chico",   emoji:"🌽", nombre:"Esquites Chico",   desc:"Porción chica al estilo Veracruz",   precios:{ "Amarillo":50, "Natural":45 }, tipo:"grano" },
-      { id:"esquites-mediano", emoji:"🌽", nombre:"Esquits Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
+      { id:"esquites-mediano", emoji:"🌽", nombre:"Esquites Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
       { id:"esquites-grande",  emoji:"🌽", nombre:"Esquites Grande",  desc:"Porción grande al estilo Veracruz",  precios:{ "Amarillo":70, "Natural":65 }, tipo:"grano" },
     ],
   },
   fresas: {
-    label: "Fresas con Crema",
-    emoji: "🍓",
+    label: "Fresas con Crema", emoji: "🍓",
     items: [
       { id:"fresas-chica",   emoji:"🍓", nombre:"Fresas con Crema Chica",   desc:"Fresas frescas con crema, tamaño chico",   precios:{ "Chica":45 } },
       { id:"fresas-mediana", emoji:"🍓", nombre:"Fresas con Crema Mediana", desc:"Fresas frescas con crema, tamaño mediano", precios:{ "Mediana":90 } },
       { id:"fresas-grande",  emoji:"🍓", nombre:"Fresas con Crema Grande",  desc:"Fresas frescas con crema, tamaño grande",  precios:{ "Grande":170 } },
     ],
   },
+  dubai: {
+    label: "Fresas Dubai", emoji: "✨",
+    items: [
+      { id:"dubai", emoji:"✨", nombre:"Fresas Dubai", desc:"Fresas con crema estilo Dubai", precios:{ "Chica":95, "Mediana":190, "Grande":370 }, tipo:"especial" },
+    ],
+  },
+  lotus: {
+    label: "Fresas Lotus", emoji: "🌸",
+    items: [
+      { id:"lotus", emoji:"🌸", nombre:"Fresas Lotus", desc:"Fresas con crema estilo Lotus", precios:{ "Chica":70, "Mediana":120, "Grande":205 }, tipo:"especial" },
+    ],
+  },
 };
 
 const HORARIOS = ["Lo antes posible","11:00–12:00","12:00–13:00","13:00–14:00","16:00–17:00","17:00–18:00","18:00–19:00","19:00–20:00"];
-const ZONAS = ["Martí","Colón","Centro","Boca del Río","Veracruz Norte","Veracruz Sur","Reforma","Flores Magón","Costa Verde"];
+const ZONAS    = ["Martí","Colón","Centro","Boca del Río","Veracruz Norte","Veracruz Sur","Reforma","Flores Magón","Costa Verde"];
 
 const s = {
   label: { fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, textTransform:"uppercase", letterSpacing:"0.12em", display:"block", marginBottom:8 },
   input: { width:"100%", boxSizing:"border-box", background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"13px 16px", fontFamily:"system-ui,sans-serif", fontSize:15, color:text, outline:"none" },
 };
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
 function buildResumen(carrito) {
   return carrito.map(i => {
     const toppings = i.toppings ? `\n   └ ${i.toppings}` : "";
@@ -72,7 +74,6 @@ function buildResumen(carrito) {
   }).join("\n");
 }
 
-// ─── UI COMPONENTS ────────────────────────────────────────────────────────────
 function Btn({ children, onClick, variant="primary", disabled }) {
   const base = { border:"none", cursor:disabled?"default":"pointer", borderRadius:14, fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, transition:"opacity 0.15s", opacity:disabled?0.4:1 };
   if (variant==="primary") return <button onClick={onClick} disabled={disabled} style={{ ...base, background:accent, color:"#fff", padding:"14px 0", width:"100%" }}>{children}</button>;
@@ -99,57 +100,30 @@ function Pasos({ paso }) {
   );
 }
 
-// ─── TOPPINGS DATA ────────────────────────────────────────────────────────────
-const TOPPINGS_GRATIS = [
-  "Oreo","Mazapán","Granola","Lunetas","Galleta María","Almendra","Nuez","Chispas de chocolate"
-];
-const TOPPINGS_PREMIUM = [
-  { nombre:"Cheesecake", extra:30 },
-  { nombre:"Huevito Kinder", extra:30 },
-  { nombre:"Magnum", extra:30 },
-  { nombre:"Brownie", extra:30 },
-  { nombre:"Kinder Bueno", extra:30 },
-  { nombre:"KitKat", extra:30 },
-  { nombre:"Queso de Bola", extra:30 },
-];
-const TOPPINGS_ESPECIAL = [
-  { nombre:"Conejito Turín", extra:20 },
-  { nombre:"Snicker", extra:20 },
-  { nombre:"Kinder", extra:20 },
-  { nombre:"Kinder Delice", extra:20 },
-  { nombre:"Galleta Doble Chocolate", extra:20 },
-  { nombre:"Galleta Lotus", extra:20 },
-];
-const JARABES = [
-  { nombre:"Chocolate", extra:10 },
-  { nombre:"Fresa", extra:10 },
-  { nombre:"Cajeta", extra:10 },
-  { nombre:"Lechera", extra:10 },
-];
+const TOPPINGS_GRATIS   = ["Oreo","Mazapán","Granola","Lunetas","Galleta María","Almendra","Nuez","Chispas de chocolate"];
+const TOPPINGS_PREMIUM  = [{ nombre:"Cheesecake",extra:30 },{ nombre:"Huevito Kinder",extra:30 },{ nombre:"Magnum",extra:30 },{ nombre:"Brownie",extra:30 },{ nombre:"Kinder Bueno",extra:30 },{ nombre:"KitKat",extra:30 },{ nombre:"Queso de Bola",extra:30 }];
+const TOPPINGS_ESPECIAL = [{ nombre:"Conejito Turín",extra:20 },{ nombre:"Snicker",extra:20 },{ nombre:"Kinder",extra:20 },{ nombre:"Kinder Delice",extra:20 },{ nombre:"Galleta Doble Chocolate",extra:20 },{ nombre:"Galleta Lotus",extra:20 }];
+const JARABES           = [{ nombre:"Chocolate",extra:10 },{ nombre:"Fresa",extra:10 },{ nombre:"Cajeta",extra:10 },{ nombre:"Lechera",extra:10 }];
 
+// ── Modal fresas clásicas (con toppings gratis obligatorios) ──────────────────
 function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
-  const isChica   = tamano === "Chica";
-  const isGrande  = tamano === "Grande";
+  const isChica  = tamano === "Chica";
+  const isGrande = tamano === "Grande";
   const maxGratis = isChica ? 1 : 2;
 
-  const [selGratis, setSelGratis]     = useState([]);
-  const [selPremium, setSelPremium]   = useState([]);
+  const [selGratis,   setSelGratis]   = useState([]);
+  const [selPremium,  setSelPremium]  = useState([]);
   const [selEspecial, setSelEspecial] = useState(null);
-  const [selJarabe, setSelJarabe]     = useState(null);
-  const [error, setError]             = useState("");
+  const [selJarabe,   setSelJarabe]   = useState(null);
+  const [error,       setError]       = useState("");
 
-  const toggleGratis = (t) => {
+  const toggleGratis  = (t) => {
     if (selGratis.includes(t)) { setSelGratis(selGratis.filter(x=>x!==t)); return; }
     if (selGratis.length >= maxGratis) { setError(`Solo puedes elegir ${maxGratis} topping${maxGratis>1?"s":""} gratis`); setTimeout(()=>setError(""),2000); return; }
     setSelGratis([...selGratis, t]);
   };
-  const togglePremium = (t) => {
-    if (selPremium.includes(t.nombre)) { setSelPremium(selPremium.filter(x=>x!==t.nombre)); return; }
-    setSelPremium([...selPremium, t.nombre]);
-  };
-  const toggleEspecial = (t) => {
-    setSelEspecial(selEspecial === t.nombre ? null : t.nombre);
-  };
+  const togglePremium  = (t) => { if (selPremium.includes(t.nombre)) { setSelPremium(selPremium.filter(x=>x!==t.nombre)); return; } setSelPremium([...selPremium, t.nombre]); };
+  const toggleEspecial = (t) => { setSelEspecial(selEspecial === t.nombre ? null : t.nombre); };
 
   const extraPremium  = selPremium.length * 30;
   const extraEspecial = (!isGrande && selEspecial) ? 20 : 0;
@@ -158,30 +132,15 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
   const precioFinal   = precioBase + totalExtra;
 
   const handleConfirm = () => {
-    if (selGratis.length < maxGratis) {
-      setError(`Elige ${maxGratis} topping${maxGratis>1?"s":""} gratis`);
-      setTimeout(()=>setError(""),2500); return;
-    }
-    const toppingDesc = [
-      ...selGratis,
-      ...selPremium.map(t=>`${t} (+$30)`),
-      ...(selEspecial ? [`${selEspecial}${isGrande?"":" (+$20)"}`] : []),
-      ...(selJarabe ? [`Jarabe ${selJarabe} (+$10)`] : []),
-    ].join(", ");
+    if (selGratis.length < maxGratis) { setError(`Elige ${maxGratis} topping${maxGratis>1?"s":""} gratis`); setTimeout(()=>setError(""),2500); return; }
+    const toppingDesc = [...selGratis, ...selPremium.map(t=>`${t} (+$30)`), ...(selEspecial?[`${selEspecial}${isGrande?"":" (+$20)"}`]:[]), ...(selJarabe?[`Jarabe ${selJarabe} (+$10)`]:[])].join(", ");
     onConfirm({ toppingDesc, precioFinal });
   };
 
   const overlay  = { position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center" };
   const sheet    = { background:bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 36px", maxWidth:520, width:"100%", maxHeight:"90vh", overflowY:"auto" };
   const secTitle = { fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, color:accent, textTransform:"uppercase", letterSpacing:"0.1em", margin:"18px 0 10px" };
-  const chip     = (selected) => ({
-    border: `1.5px solid ${selected ? accent : border}`,
-    background: selected ? accent+"22" : card,
-    borderRadius: 10, padding:"8px 13px", cursor:"pointer",
-    fontFamily:"system-ui,sans-serif", fontSize:13, fontWeight:600,
-    color: selected ? accent : text,
-    display:"flex", alignItems:"center", gap:6,
-  });
+  const chip     = (sel) => ({ border:`1.5px solid ${sel?accent:border}`, background:sel?accent+"22":card, borderRadius:10, padding:"8px 13px", cursor:"pointer", fontFamily:"system-ui,sans-serif", fontSize:13, fontWeight:600, color:sel?accent:text, display:"flex", alignItems:"center", gap:6 });
 
   return (
     <div style={overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -193,50 +152,73 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
           </div>
           <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
         </div>
-
         <div style={secTitle}>🎉 Toppings incluidos — elige {maxGratis}<span style={{ color:muted, fontWeight:400, fontSize:11, marginLeft:6, textTransform:"none" }}>({selGratis.length}/{maxGratis})</span></div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {TOPPINGS_GRATIS.map(t=><button key={t} onClick={()=>toggleGratis(t)} style={chip(selGratis.includes(t))}>{t}</button>)}
-        </div>
-
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_GRATIS.map(t=><button key={t} onClick={()=>toggleGratis(t)} style={chip(selGratis.includes(t))}>{t}</button>)}</div>
         <div style={secTitle}>⭐ Premium — +$30 c/u</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {TOPPINGS_PREMIUM.map(t=>(
-            <button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>
-              {t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span>
-            </button>
-          ))}
-        </div>
-
-        <div style={secTitle}>✨ Especial — {isGrande ? "1 gratis 🎁" : "+$20"}</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {TOPPINGS_ESPECIAL.map(t=>(
-            <button key={t.nombre} onClick={()=>toggleEspecial(t)} style={chip(selEspecial===t.nombre)}>
-              {t.nombre} {!isGrande && <span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span>}
-              {isGrande && <span style={{ fontSize:11, color:"#2a7c3a" }}>gratis</span>}
-            </button>
-          ))}
-        </div>
-
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_PREMIUM.map(t=><button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>{t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span></button>)}</div>
+        <div style={secTitle}>✨ Especial — {isGrande?"1 gratis 🎁":"+$20"}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_ESPECIAL.map(t=><button key={t.nombre} onClick={()=>toggleEspecial(t)} style={chip(selEspecial===t.nombre)}>{t.nombre} {!isGrande&&<span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span>}{isGrande&&<span style={{ fontSize:11, color:"#2a7c3a" }}>gratis</span>}</button>)}</div>
         <div style={secTitle}>🍯 Jarabe — +$10</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {JARABES.map(j=>(
-            <button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>
-              {j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span>
-            </button>
-          ))}
-        </div>
-
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{JARABES.map(j=><button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>{j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span></button>)}</div>
         {error && <div style={{ background:accent+"18", border:`1px solid ${accent}55`, borderRadius:10, padding:"10px 14px", fontFamily:"system-ui,sans-serif", fontSize:13, color:accent, marginTop:14 }}>{error}</div>}
-
         <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"14px 16px", marginTop:18, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted }}>Precio base ${precioBase}{totalExtra>0?` + extras $${totalExtra}`:""}</div>
             <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:20, color:accent }}>Total: ${precioFinal}</div>
           </div>
-          <button onClick={handleConfirm} style={{ background:accent, border:"none", borderRadius:12, padding:"12px 22px", fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, color:"#fff", cursor:"pointer" }}>
-            + Agregar 🍓
-          </button>
+          <button onClick={handleConfirm} style={{ background:accent, border:"none", borderRadius:12, padding:"12px 22px", fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, color:"#fff", cursor:"pointer" }}>+ Agregar 🍓</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal Dubai / Lotus (todo opcional, sin gratis) ───────────────────────────
+function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) {
+  const [selPremium,  setSelPremium]  = useState([]);
+  const [selEspecial, setSelEspecial] = useState(null);
+  const [selJarabe,   setSelJarabe]   = useState(null);
+
+  const togglePremium = (t) => { if (selPremium.includes(t.nombre)) { setSelPremium(selPremium.filter(x=>x!==t.nombre)); return; } setSelPremium([...selPremium, t.nombre]); };
+
+  const extraPremium  = selPremium.length * 30;
+  const extraEspecial = selEspecial ? 20 : 0;
+  const extraJarabe   = selJarabe ? 10 : 0;
+  const totalExtra    = extraPremium + extraEspecial + extraJarabe;
+  const precioFinal   = precioBase + totalExtra;
+
+  const handleConfirm = () => {
+    const toppingDesc = [...selPremium.map(t=>`${t} (+$30)`), ...(selEspecial?[`${selEspecial} (+$20)`]:[]), ...(selJarabe?[`Jarabe ${selJarabe} (+$10)`]:[])].join(", ");
+    onConfirm({ toppingDesc: toppingDesc || "Sin toppings extra", precioFinal });
+  };
+
+  const overlay  = { position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center" };
+  const sheet    = { background:bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 36px", maxWidth:520, width:"100%", maxHeight:"90vh", overflowY:"auto" };
+  const secTitle = { fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, color:accent, textTransform:"uppercase", letterSpacing:"0.1em", margin:"18px 0 10px" };
+  const chip     = (sel) => ({ border:`1.5px solid ${sel?accent:border}`, background:sel?accent+"22":card, borderRadius:10, padding:"8px 13px", cursor:"pointer", fontFamily:"system-ui,sans-serif", fontSize:13, fontWeight:600, color:sel?accent:text, display:"flex", alignItems:"center", gap:6 });
+
+  return (
+    <div style={overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={sheet}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+          <div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:18, color:text }}>Personaliza {item.emoji}</div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontSize:13, color:muted, marginTop:3 }}>{item.nombre} — {tamano} · Toppings opcionales</div>
+          </div>
+          <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+        </div>
+        <div style={secTitle}>⭐ Premium — +$30 c/u</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_PREMIUM.map(t=><button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>{t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span></button>)}</div>
+        <div style={secTitle}>✨ Especial — +$20</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_ESPECIAL.map(t=><button key={t.nombre} onClick={()=>setSelEspecial(selEspecial===t.nombre?null:t.nombre)} style={chip(selEspecial===t.nombre)}>{t.nombre} <span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span></button>)}</div>
+        <div style={secTitle}>🍯 Jarabe — +$10</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{JARABES.map(j=><button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>{j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span></button>)}</div>
+        <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"14px 16px", marginTop:18, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted }}>Precio base ${precioBase}{totalExtra>0?` + extras $${totalExtra}`:""}</div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:20, color:accent }}>Total: ${precioFinal}</div>
+          </div>
+          <button onClick={handleConfirm} style={{ background:accent, border:"none", borderRadius:12, padding:"12px 22px", fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, color:"#fff", cursor:"pointer" }}>+ Agregar {item.emoji}</button>
         </div>
       </div>
     </div>
@@ -244,16 +226,17 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
 }
 
 function ProductoCard({ item, onAdd, carritoItems }) {
-  const tamanos  = Object.keys(item.precios);
-  const [tam, setTam]         = useState(tamanos[0]);
-  const [flash, setFlash]     = useState(false);
+  const tamanos    = Object.keys(item.precios);
+  const [tam, setTam]             = useState(tamanos[0]);
+  const [flash, setFlash]         = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const esGrano  = item.tipo === "grano";
-  const esFresa  = item.id.startsWith("fresas-");
-  const enCarrito = carritoItems.filter(i=>i.id===item.id).reduce((s,i)=>s+i.cantidad,0);
+  const esGrano    = item.tipo === "grano";
+  const esFresa    = item.id.startsWith("fresas-");
+  const esEspecial = item.tipo === "especial";
+  const enCarrito  = carritoItems.filter(i=>i.id===item.id).reduce((s,i)=>s+i.cantidad,0);
 
   const handleAdd = () => {
-    if (esFresa) { setShowModal(true); return; }
+    if (esFresa || esEspecial) { setShowModal(true); return; }
     onAdd({ id:item.id, nombre:item.nombre, tamano:esGrano?`Grano ${tam}`:tam, precio:item.precios[tam], emoji:item.emoji });
     setFlash(true); setTimeout(()=>setFlash(false),900);
   };
@@ -265,14 +248,11 @@ function ProductoCard({ item, onAdd, carritoItems }) {
 
   return (
     <>
-      {showModal && (
-        <ToppingModal
-          item={item}
-          tamano={tam}
-          precioBase={item.precios[tam]}
-          onConfirm={handleToppingConfirm}
-          onClose={()=>setShowModal(false)}
-        />
+      {showModal && esFresa && (
+        <ToppingModal item={item} tamano={tam} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
+      )}
+      {showModal && esEspecial && (
+        <ToppingModalOpcional item={item} tamano={tam} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
       )}
       <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:"16px", display:"flex", alignItems:"center", gap:14 }}>
         <div style={{ width:68, height:68, borderRadius:14, background:pill, display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, flexShrink:0 }}>{item.emoji}</div>
@@ -283,23 +263,19 @@ function ProductoCard({ item, onAdd, carritoItems }) {
             <div>
               <span style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.08em" }}>Grano:</span>
               <div style={{ display:"flex", gap:6, marginTop:5 }}>
-                {tamanos.map(t=>(
-                  <button key={t} onClick={()=>setTam(t)} style={{ border:`1.5px solid ${t===tam?accent:border}`, background:t===tam?accent+"22":"none", borderRadius:8, padding:"4px 12px", fontFamily:"system-ui,sans-serif", fontSize:11, color:t===tam?accent:muted, cursor:"pointer", fontWeight:600 }}>{t}</button>
-                ))}
+                {tamanos.map(t=><button key={t} onClick={()=>setTam(t)} style={{ border:`1.5px solid ${t===tam?accent:border}`, background:t===tam?accent+"22":"none", borderRadius:8, padding:"4px 12px", fontFamily:"system-ui,sans-serif", fontSize:11, color:t===tam?accent:muted, cursor:"pointer", fontWeight:600 }}>{t}</button>)}
               </div>
             </div>
           ) : tamanos.length>1 ? (
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {tamanos.map(t=>(
-                <button key={t} onClick={()=>setTam(t)} style={{ border:`1.5px solid ${t===tam?accent:border}`, background:t===tam?accent+"22":"none", borderRadius:8, padding:"4px 10px", fontFamily:"system-ui,sans-serif", fontSize:11, color:t===tam?accent:muted, cursor:"pointer", fontWeight:600 }}>{t}</button>
-              ))}
+              {tamanos.map(t=><button key={t} onClick={()=>setTam(t)} style={{ border:`1.5px solid ${t===tam?accent:border}`, background:t===tam?accent+"22":"none", borderRadius:8, padding:"4px 10px", fontFamily:"system-ui,sans-serif", fontSize:11, color:t===tam?accent:muted, cursor:"pointer", fontWeight:600 }}>{t}</button>)}
             </div>
           ) : null}
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
           <span style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:17, color:accent }}>${item.precios[tam]}</span>
           <button onClick={handleAdd} style={{ border:"none", cursor:"pointer", borderRadius:10, padding:"7px 14px", background:flash?"#2a7c3a":pill, color:flash?"#7fff9f":text, fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, transition:"all 0.2s", whiteSpace:"nowrap" }}>
-            {flash?"✓":enCarrito>0?`+1 (${enCarrito})`:esFresa?"🍓 Armar":"+Agregar"}
+            {flash?"✓":enCarrito>0?`+1 (${enCarrito})`:esEspecial?`${item.emoji} Armar`:esFresa?"🍓 Armar":"+Agregar"}
           </button>
         </div>
       </div>
@@ -357,9 +333,7 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack }) {
       <div style={{ marginBottom:20 }}>
         <span style={s.label}>{tipo==="domicilio"?"Horario de entrega":"Hora para recoger"}</span>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {HORARIOS.map(h=>(
-            <button key={h} onClick={()=>setHora(h)} style={{ border:`1.5px solid ${h===hora?accent:border}`, background:h===hora?accent+"22":card, borderRadius:10, padding:"8px 14px", fontFamily:"system-ui,sans-serif", fontSize:12, fontWeight:600, color:h===hora?accent:muted, cursor:"pointer" }}>{h}</button>
-          ))}
+          {HORARIOS.map(h=><button key={h} onClick={()=>setHora(h)} style={{ border:`1.5px solid ${h===hora?accent:border}`, background:h===hora?accent+"22":card, borderRadius:10, padding:"8px 14px", fontFamily:"system-ui,sans-serif", fontSize:12, fontWeight:600, color:h===hora?accent:muted, cursor:"pointer" }}>{h}</button>)}
         </div>
       </div>
       <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:18, marginBottom:20 }}>
@@ -369,7 +343,7 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack }) {
             <div style={{ width:44, height:44, borderRadius:8, background:pill, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 }}>{i.emoji}</div>
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:"system-ui,sans-serif", fontSize:14, fontWeight:600, color:text }}>{i.nombre}</div>
-              <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted }}>{i.tamano}{i.toppings ? ` · ${i.toppings}` : ""}</div>
+              <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted }}>{i.tamano}{i.toppings?` · ${i.toppings}`:""}</div>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
               <button onClick={()=>onQuitar(i.id,i.tamano)} style={{ background:pill, border:"none", borderRadius:8, width:26, height:26, color:text, cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
@@ -405,92 +379,58 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
   const [enviando,setEnviando]   = useState(false);
 
   const handleConfirmar = async () => {
-    if (!nombre.trim() || !telefono.trim()) { setError("Falta tu nombre o teléfono."); return; }
-    if (entrega.tipo==="domicilio" && !direccion.trim()) { setError("Falta la dirección."); return; }
-    if (entrega.tipo==="domicilio" && !colonia)          { setError("Selecciona tu colonia."); return; }
-    if (entrega.tipo==="domicilio" && !cp.trim())        { setError("Falta el código postal."); return; }
-
-    setError(null);
-    setEnviando(true);
+    if (!nombre.trim()||!telefono.trim()) { setError("Falta tu nombre o teléfono."); return; }
+    if (entrega.tipo==="domicilio"&&!direccion.trim()) { setError("Falta la dirección."); return; }
+    if (entrega.tipo==="domicilio"&&!colonia)          { setError("Selecciona tu colonia."); return; }
+    if (entrega.tipo==="domicilio"&&!cp.trim())        { setError("Falta el código postal."); return; }
+    setError(null); setEnviando(true);
 
     const num   = Math.floor(Math.random()*9999)+1;
     const folio = `#FP:${String(num).padStart(4,"0")}`;
-    const resumen = buildResumen(carrito);
-    const tipoLabel  = entrega.tipo==="domicilio" ? "🛵 A domicilio" : "🏪 Recoger en tienda";
+    const resumen    = buildResumen(carrito);
+    const tipoLabel  = entrega.tipo==="domicilio"?"🛵 A domicilio":"🏪 Recoger en tienda";
     const pagoLabel  = pago==="efectivo"?"💵 Efectivo":pago==="tarjeta"?"💳 Tarjeta":"📲 Transferencia";
-    const dirCompleta = entrega.tipo==="domicilio"
-      ? `${direccion}${numInt?`, Int. ${numInt}`:""}, ${colonia}, CP ${cp}`
-      : "—";
+    const dirCompleta = entrega.tipo==="domicilio" ? `${direccion}${numInt?`, Int. ${numInt}`:""}, ${colonia}, CP ${cp}` : "—";
 
-    // ── EmailJS al dueño (siempre) ──────────────────────────────────────────
     try {
       emailjs.init(EJS_PUBLIC);
       await emailjs.send(EJS_SERVICE, EJS_TPL_TIENDA, {
-        folio,
-        nombre,
-        telefono,
-        email_cliente: email || "No proporcionó",
+        folio, nombre, telefono, email_cliente: email||"No proporcionó",
         resumen_pedido: resumen,
-        subtotal:  `$${entrega.subtotal.toFixed(0)}`,
-        envio:     entrega.envio===0 ? "Gratis" : `$${entrega.envio.toFixed(0)}`,
-        total:     `$${entrega.total.toFixed(0)}`,
-        tipo_entrega: tipoLabel,
-        horario:   entrega.hora,
-        forma_pago: pagoLabel,
-        direccion: dirCompleta,
-        colonia:   colonia || "—",
-        num_interior: numInt || "—",
-        cp:        cp || "—",
-        notas:     notas || "Sin notas",
+        subtotal: `$${entrega.subtotal.toFixed(0)}`,
+        envio: entrega.envio===0?"Gratis":`$${entrega.envio.toFixed(0)}`,
+        total: `$${entrega.total.toFixed(0)}`,
+        tipo_entrega: tipoLabel, horario: entrega.hora, forma_pago: pagoLabel,
+        direccion: dirCompleta, colonia: colonia||"—", num_interior: numInt||"—", cp: cp||"—",
+        notas: notas||"Sin notas",
       });
-    } catch (e) {
-      console.error("EmailJS tienda error:", e);
-    }
+    } catch (e) { console.error("EmailJS tienda:", e); }
 
-    // ── EmailJS al cliente (solo si dejó email) ─────────────────────────────
     if (email.trim()) {
       try {
         await emailjs.send(EJS_SERVICE, EJS_TPL_CLIENTE, {
-          folio,
-          nombre,
-          email_cliente: email,
+          folio, nombre, email_cliente: email,
           resumen_pedido: resumen,
-          total:     `$${entrega.total.toFixed(0)}`,
-          tipo_entrega: tipoLabel,
-          horario:   entrega.hora,
-          forma_pago: pagoLabel,
-          direccion: dirCompleta,
-          notas:     notas || "",
+          total: `$${entrega.total.toFixed(0)}`,
+          tipo_entrega: tipoLabel, horario: entrega.hora, forma_pago: pagoLabel,
+          direccion: dirCompleta, notas: notas||"",
         });
-      } catch (e) {
-        console.error("EmailJS cliente error:", e);
-      }
+      } catch (e) { console.error("EmailJS cliente:", e); }
     }
 
-    // ── Telegram ────────────────────────────────────────────────────────────
     const tgMsg = [
-      `🍓 <b>NUEVO PEDIDO — ${folio}</b>`,
-      ``,
+      `🍓 <b>NUEVO PEDIDO — ${folio}</b>`, ``,
       `👤 <b>Cliente</b>`,
-      `• Nombre: ${nombre}`,
-      `• Tel: ${telefono}`,
-      `• Email: ${email || "—"}`,
-      `• Pago: ${pagoLabel}`,
-      ``,
+      `• Nombre: ${nombre}`, `• Tel: ${telefono}`, `• Email: ${email||"—"}`, `• Pago: ${pagoLabel}`, ``,
       `📦 <b>Entrega</b>`,
-      `• Tipo: ${tipoLabel}`,
-      `• Horario: ${entrega.hora}`,
-      entrega.tipo==="domicilio" ? `• Dirección: ${dirCompleta}` : "",
-      ``,
-      `🛒 <b>Pedido</b>`,
-      resumen,
-      ``,
+      `• Tipo: ${tipoLabel}`, `• Horario: ${entrega.hora}`,
+      entrega.tipo==="domicilio"?`• Dirección: ${dirCompleta}`:"",``,
+      `🛒 <b>Pedido</b>`, resumen, ``,
       `💰 Subtotal: $${entrega.subtotal.toFixed(0)}`,
       `🛵 Envío: ${entrega.envio===0?"Gratis":`$${entrega.envio.toFixed(0)}`}`,
       `✅ <b>TOTAL: $${entrega.total.toFixed(0)}</b>`,
-      notas ? `\n📝 Notas: ${notas}` : "",
-    ].filter(l => l !== "").join("\n");
-
+      notas?`\n📝 Notas: ${notas}`:"",
+    ].filter(l=>l!=="").join("\n");
     await sendTelegram(tgMsg);
 
     setEnviando(false);
@@ -505,7 +445,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
         <div><span style={s.label}>Teléfono</span><input value={telefono} onChange={e=>setTelefono(e.target.value)} placeholder="229 000 0000" type="tel" style={s.input} /></div>
         <div><span style={s.label}>Correo <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="tucorreo@gmail.com" type="email" style={s.input} /></div>
         {entrega.tipo==="domicilio"&&<div><span style={s.label}>Dirección</span><textarea value={direccion} onChange={e=>setDireccion(e.target.value)} placeholder="Calle, número y referencias" rows={2} style={{ ...s.input, resize:"vertical" }} /></div>}
-        {entrega.tipo==="domicilio"&&<div><span style={s.label}>Número interior <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span><input value={numInt} onChange={e=>setNumInt(e.target.value)} placeholder='Ej: "102A", Solo si aplica' style={s.input} /></div>}
+        {entrega.tipo==="domicilio"&&<div><span style={s.label}>Número interior <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span><input value={numInt} onChange={e=>setNumInt(e.target.value)} placeholder='Ej: "102A"' style={s.input} /></div>}
         {entrega.tipo==="domicilio"&&<div><span style={s.label}>Colonia</span><select value={colonia} onChange={e=>setColonia(e.target.value)} style={{ ...s.input, appearance:"none", WebkitAppearance:"none" }}><option value="">Selecciona tu colonia…</option>{ZONAS.map(z=><option key={z} value={z}>{z}</option>)}</select></div>}
         {entrega.tipo==="domicilio"&&<div><span style={s.label}>Código postal</span><input value={cp} onChange={e=>setCp(e.target.value)} placeholder="91700" type="tel" maxLength={5} style={s.input} /></div>}
         <div>
@@ -562,12 +502,11 @@ function Confirmacion({ folio, nombre, entrega, carrito, onNuevoPedido }) {
   );
 }
 
-// ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [paso,setPaso]               = useState(1);
-  const [carrito,setCarrito]         = useState([]);
-  const [entrega,setEntrega]         = useState(null);
-  const [abierto,setAbierto]         = useState(null);
+  const [paso,setPaso]                 = useState(1);
+  const [carrito,setCarrito]           = useState([]);
+  const [entrega,setEntrega]           = useState(null);
+  const [abierto,setAbierto]           = useState(null);
   const [confirmacion,setConfirmacion] = useState(null);
 
   useEffect(()=>{
@@ -588,14 +527,11 @@ export default function App() {
     setCarrito(prev => {
       const ex = prev.find(i=>i.id===id&&i.tamano===tamano);
       if (!ex) return prev;
-      if (ex.cantidad <= 1) return prev.filter(i=>i!==ex);
+      if (ex.cantidad<=1) return prev.filter(i=>i!==ex);
       return prev.map(i=>i===ex?{...i,cantidad:i.cantidad-1}:i);
     });
   };
-  const handleConfirmar = ({ folio, ...datos }) => {
-    setConfirmacion({ folio, datos });
-    setPaso(4);
-  };
+  const handleConfirmar = ({ folio, ...datos }) => { setConfirmacion({ folio, datos }); setPaso(4); };
   const reset = () => { setCarrito([]); setEntrega(null); setConfirmacion(null); setPaso(1); };
 
   return (
