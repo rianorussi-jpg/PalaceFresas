@@ -75,18 +75,18 @@ const s = {
   input: { width:"100%", boxSizing:"border-box", background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"13px 16px", fontFamily:"system-ui,sans-serif", fontSize:15, color:text, outline:"none" },
 };
 
-function sameCarritoLine(a, b) {
-  return a.id === b.id && a.tamano === b.tamano && (a.toppings || "") === (b.toppings || "") && a.precio === b.precio;
-}
-
 function carritoLineKey(i) {
-  return `${i.id}|${i.tamano}|${i.toppings || ""}|${i.precio}`;
+  return i.uid || `${i.id}|${i.tamano}|${i.precio}`;
 }
 
 function buildResumen(carrito) {
-  return carrito.map(i => {
-    const toppings = i.toppings ? `\n   └ ${i.toppings}` : "";
-    return `${i.cantidad}× ${i.nombre} (${i.tamano}) — $${(i.precio * i.cantidad).toFixed(0)}${toppings}`;
+  return carrito.flatMap(i => {
+    if (i.toppings) {
+      return Array.from({ length: i.cantidad }, () =>
+        `1× ${i.nombre} (${i.tamano}) — $${i.precio.toFixed(0)}\n   └ ${i.toppings}`
+      );
+    }
+    return [`${i.cantidad}× ${i.nombre} (${i.tamano}) — $${(i.precio * i.cantidad).toFixed(0)}`];
   }).join("\n");
 }
 
@@ -540,14 +540,19 @@ export default function App() {
   const agregar = ({ id, nombre, tamano, precio, emoji, toppings }) => {
     setCarrito(prev => {
       const item = { id, nombre, tamano, precio, emoji, toppings };
-      const ex = prev.find(i => sameCarritoLine(i, item));
+      if (toppings) {
+        return [...prev, { ...item, cantidad: 1, uid: `line-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` }];
+      }
+      const ex = prev.find(i => !i.uid && i.id === id && i.tamano === tamano);
       if (ex) return prev.map(i => i === ex ? { ...i, cantidad: i.cantidad + 1 } : i);
       return [...prev, { ...item, cantidad: 1 }];
     });
   };
   const quitar = (item) => {
     setCarrito(prev => {
-      const ex = prev.find(i => sameCarritoLine(i, item));
+      const ex = item.uid
+        ? prev.find(i => i.uid === item.uid)
+        : prev.find(i => !i.uid && i.id === item.id && i.tamano === item.tamano);
       if (!ex) return prev;
       if (ex.cantidad <= 1) return prev.filter(i => i !== ex);
       return prev.map(i => i === ex ? { ...i, cantidad: i.cantidad - 1 } : i);
