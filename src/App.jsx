@@ -1,5 +1,29 @@
 import { useState, useEffect } from "react";
+import emailjs from "@emailjs/browser";
 
+// ─── EMAILJS CONFIG ───────────────────────────────────────────────────────────
+const EJS_SERVICE  = "service_gdnezgh";
+const EJS_TPL_CLIENTE = "template_ko2otxk";
+const EJS_TPL_TIENDA  = "template_lmdnq8m";
+const EJS_PUBLIC   = "fsB-EreO4-4UsYo9Y";
+
+// ─── TELEGRAM CONFIG ──────────────────────────────────────────────────────────
+const TG_TOKEN   = "8561046903:AAEQl1KQSQeNGAQ0si63MbzRePhzGQytXdI";
+const TG_CHAT_ID = "7681123167";
+
+async function sendTelegram(text) {
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: "HTML" }),
+    });
+  } catch (e) {
+    console.error("Telegram error:", e);
+  }
+}
+
+// ─── THEME ────────────────────────────────────────────────────────────────────
 const bg     = "#fff5f7";
 const card   = "#ffffff";
 const cardHi = "#fdedf0";
@@ -10,6 +34,7 @@ const text   = "#1a1a1a";
 const muted  = "#9a6070";
 const pill   = "#fdedf0";
 
+// ─── MENU DATA ────────────────────────────────────────────────────────────────
 const MENU = {
   esquites: {
     label: "Esquites",
@@ -39,6 +64,15 @@ const s = {
   input: { width:"100%", boxSizing:"border-box", background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"13px 16px", fontFamily:"system-ui,sans-serif", fontSize:15, color:text, outline:"none" },
 };
 
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function buildResumen(carrito) {
+  return carrito.map(i => {
+    const toppings = i.toppings ? `\n   └ ${i.toppings}` : "";
+    return `${i.cantidad}× ${i.nombre} (${i.tamano}) — $${(i.precio * i.cantidad).toFixed(0)}${toppings}`;
+  }).join("\n");
+}
+
+// ─── UI COMPONENTS ────────────────────────────────────────────────────────────
 function Btn({ children, onClick, variant="primary", disabled }) {
   const base = { border:"none", cursor:disabled?"default":"pointer", borderRadius:14, fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, transition:"opacity 0.15s", opacity:disabled?0.4:1 };
   if (variant==="primary") return <button onClick={onClick} disabled={disabled} style={{ ...base, background:accent, color:"#fff", padding:"14px 0", width:"100%" }}>{children}</button>;
@@ -65,7 +99,7 @@ function Pasos({ paso }) {
   );
 }
 
-// ─── TOPPINGS DATA ───────────────────────────────────────────────────────────
+// ─── TOPPINGS DATA ────────────────────────────────────────────────────────────
 const TOPPINGS_GRATIS = [
   "Oreo","Mazapán","Granola","Lunetas","Galleta María","Almendra","Nuez","Chispas de chocolate"
 ];
@@ -93,22 +127,16 @@ const JARABES = [
   { nombre:"Lechera", extra:10 },
 ];
 
-// Reglas por tamaño:
-// Chica  → 1 gratis, sin especial gratis
-// Mediana → 2 gratis, sin especial gratis
-// Grande  → 2 gratis + 1 especial gratis
-
 function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
   const isChica   = tamano === "Chica";
-  const isMediana = tamano === "Mediana";
   const isGrande  = tamano === "Grande";
-  const maxGratis = isChica ? 1 : 2; // chica=1, mediana=2, grande=2
+  const maxGratis = isChica ? 1 : 2;
 
-  const [selGratis, setSelGratis]   = useState([]);
-  const [selPremium, setSelPremium] = useState([]);
-  const [selEspecial, setSelEspecial] = useState(null); // solo 1
-  const [selJarabe, setSelJarabe]   = useState(null);
-  const [error, setError]           = useState("");
+  const [selGratis, setSelGratis]     = useState([]);
+  const [selPremium, setSelPremium]   = useState([]);
+  const [selEspecial, setSelEspecial] = useState(null);
+  const [selJarabe, setSelJarabe]     = useState(null);
+  const [error, setError]             = useState("");
 
   const toggleGratis = (t) => {
     if (selGratis.includes(t)) { setSelGratis(selGratis.filter(x=>x!==t)); return; }
@@ -123,12 +151,11 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
     setSelEspecial(selEspecial === t.nombre ? null : t.nombre);
   };
 
-  // Calcular extras
-  const extraPremium = selPremium.length * 30;
+  const extraPremium  = selPremium.length * 30;
   const extraEspecial = (!isGrande && selEspecial) ? 20 : 0;
-  const extraJarabe = selJarabe ? 10 : 0;
-  const totalExtra = extraPremium + extraEspecial + extraJarabe;
-  const precioFinal = precioBase + totalExtra;
+  const extraJarabe   = selJarabe ? 10 : 0;
+  const totalExtra    = extraPremium + extraEspecial + extraJarabe;
+  const precioFinal   = precioBase + totalExtra;
 
   const handleConfirm = () => {
     if (selGratis.length < maxGratis) {
@@ -144,10 +171,10 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
     onConfirm({ toppingDesc, precioFinal });
   };
 
-  const overlay = { position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center" };
-  const sheet   = { background:bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 36px", maxWidth:520, width:"100%", maxHeight:"90vh", overflowY:"auto" };
+  const overlay  = { position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center" };
+  const sheet    = { background:bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 36px", maxWidth:520, width:"100%", maxHeight:"90vh", overflowY:"auto" };
   const secTitle = { fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, color:accent, textTransform:"uppercase", letterSpacing:"0.1em", margin:"18px 0 10px" };
-  const chip = (selected, cost) => ({
+  const chip     = (selected) => ({
     border: `1.5px solid ${selected ? accent : border}`,
     background: selected ? accent+"22" : card,
     borderRadius: 10, padding:"8px 13px", cursor:"pointer",
@@ -159,7 +186,6 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
   return (
     <div style={overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div style={sheet}>
-        {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
           <div>
             <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:18, color:text }}>Personaliza tus fresas 🍓</div>
@@ -168,56 +194,41 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
           <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
         </div>
 
-        {/* Toppings gratis */}
-        <div style={secTitle}>
-          🎉 Toppings incluidos — elige {maxGratis}
-          <span style={{ color:muted, fontWeight:400, fontSize:11, marginLeft:6, textTransform:"none" }}>({selGratis.length}/{maxGratis})</span>
-        </div>
+        <div style={secTitle}>🎉 Toppings incluidos — elige {maxGratis}<span style={{ color:muted, fontWeight:400, fontSize:11, marginLeft:6, textTransform:"none" }}>({selGratis.length}/{maxGratis})</span></div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {TOPPINGS_GRATIS.map(t=>(
-            <button key={t} onClick={()=>toggleGratis(t)} style={chip(selGratis.includes(t), 0)}>
-              {t}
-            </button>
-          ))}
+          {TOPPINGS_GRATIS.map(t=><button key={t} onClick={()=>toggleGratis(t)} style={chip(selGratis.includes(t))}>{t}</button>)}
         </div>
 
-        {/* Toppings premium */}
         <div style={secTitle}>⭐ Premium — +$30 c/u</div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
           {TOPPINGS_PREMIUM.map(t=>(
-            <button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre), 30)}>
+            <button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>
               {t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span>
             </button>
           ))}
         </div>
 
-        {/* Toppings especial */}
-        <div style={secTitle}>
-          ✨ Especial — {isGrande ? "1 gratis 🎁" : "+$20"}
-        </div>
+        <div style={secTitle}>✨ Especial — {isGrande ? "1 gratis 🎁" : "+$20"}</div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
           {TOPPINGS_ESPECIAL.map(t=>(
-            <button key={t.nombre} onClick={()=>toggleEspecial(t)} style={chip(selEspecial===t.nombre, isGrande?0:20)}>
+            <button key={t.nombre} onClick={()=>toggleEspecial(t)} style={chip(selEspecial===t.nombre)}>
               {t.nombre} {!isGrande && <span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span>}
               {isGrande && <span style={{ fontSize:11, color:"#2a7c3a" }}>gratis</span>}
             </button>
           ))}
         </div>
 
-        {/* Jarabes */}
         <div style={secTitle}>🍯 Jarabe — +$10</div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
           {JARABES.map(j=>(
-            <button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre, 10)}>
+            <button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>
               {j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span>
             </button>
           ))}
         </div>
 
-        {/* Error */}
         {error && <div style={{ background:accent+"18", border:`1px solid ${accent}55`, borderRadius:10, padding:"10px 14px", fontFamily:"system-ui,sans-serif", fontSize:13, color:accent, marginTop:14 }}>{error}</div>}
 
-        {/* Resumen precio */}
         <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"14px 16px", marginTop:18, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted }}>Precio base ${precioBase}{totalExtra>0?` + extras $${totalExtra}`:""}</div>
@@ -233,13 +244,14 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
 }
 
 function ProductoCard({ item, onAdd, carritoItems }) {
-  const tamanos = Object.keys(item.precios);
-  const [tam, setTam] = useState(tamanos[0]);
-  const [flash, setFlash] = useState(false);
+  const tamanos  = Object.keys(item.precios);
+  const [tam, setTam]         = useState(tamanos[0]);
+  const [flash, setFlash]     = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const esGrano = item.tipo === "grano";
-  const esFresa = item.id.startsWith("fresas-");
+  const esGrano  = item.tipo === "grano";
+  const esFresa  = item.id.startsWith("fresas-");
   const enCarrito = carritoItems.filter(i=>i.id===item.id).reduce((s,i)=>s+i.cantidad,0);
+
   const handleAdd = () => {
     if (esFresa) { setShowModal(true); return; }
     onAdd({ id:item.id, nombre:item.nombre, tamano:esGrano?`Grano ${tam}`:tam, precio:item.precios[tam], emoji:item.emoji });
@@ -250,6 +262,7 @@ function ProductoCard({ item, onAdd, carritoItems }) {
     setShowModal(false);
     setFlash(true); setTimeout(()=>setFlash(false),900);
   };
+
   return (
     <>
       {showModal && (
@@ -325,8 +338,8 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack }) {
   const [tipo, setTipo] = useState("domicilio");
   const [hora, setHora] = useState(HORARIOS[0]);
   const subtotal = carrito.reduce((s,i)=>s+i.precio*i.cantidad,0);
-  const envio = tipo==="domicilio"&&subtotal<200?30:0;
-  const total = subtotal+envio;
+  const envio    = tipo==="domicilio"&&subtotal<200?30:0;
+  const total    = subtotal+envio;
   return (
     <div>
       <h2 style={{ fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:22, color:text, margin:"0 0 24px", textAlign:"center" }}>¿Cómo lo recibas?</h2>
@@ -378,21 +391,112 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack }) {
   );
 }
 
-function PasoDatos({ entrega, onBack, onConfirmar }) {
-  const [nombre,setNombre]=useState(""); const [telefono,setTelefono]=useState(""); const [email,setEmail]=useState("");
-  const [direccion,setDireccion]=useState(""); const [colonia,setColonia]=useState(""); const [numInt,setNumInt]=useState("");
-  const [cp,setCp]=useState(""); const [pago,setPago]=useState("efectivo"); const [notas,setNotas]=useState("");
-  const [error,setError]=useState(null); const [enviando,setEnviando]=useState(false);
+function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
+  const [nombre,setNombre]       = useState("");
+  const [telefono,setTelefono]   = useState("");
+  const [email,setEmail]         = useState("");
+  const [direccion,setDireccion] = useState("");
+  const [colonia,setColonia]     = useState("");
+  const [numInt,setNumInt]       = useState("");
+  const [cp,setCp]               = useState("");
+  const [pago,setPago]           = useState("efectivo");
+  const [notas,setNotas]         = useState("");
+  const [error,setError]         = useState(null);
+  const [enviando,setEnviando]   = useState(false);
+
   const handleConfirmar = async () => {
-    if(!nombre.trim()||!telefono.trim()){setError("Falta tu nombre o teléfono.");return;}
-    if(entrega.tipo==="domicilio"&&!direccion.trim()){setError("Falta la dirección.");return;}
-    if(entrega.tipo==="domicilio"&&!colonia){setError("Selecciona tu colonia.");return;}
-    if(entrega.tipo==="domicilio"&&!cp.trim()){setError("Falta el código postal.");return;}
-    setError(null); setEnviando(true);
-    await new Promise(r=>setTimeout(r,800));
-    onConfirmar({nombre,telefono,email,direccion,numInt,colonia,cp,pago,notas});
+    if (!nombre.trim() || !telefono.trim()) { setError("Falta tu nombre o teléfono."); return; }
+    if (entrega.tipo==="domicilio" && !direccion.trim()) { setError("Falta la dirección."); return; }
+    if (entrega.tipo==="domicilio" && !colonia)          { setError("Selecciona tu colonia."); return; }
+    if (entrega.tipo==="domicilio" && !cp.trim())        { setError("Falta el código postal."); return; }
+
+    setError(null);
+    setEnviando(true);
+
+    const num   = Math.floor(Math.random()*9999)+1;
+    const folio = `#FP:${String(num).padStart(4,"0")}`;
+    const resumen = buildResumen(carrito);
+    const tipoLabel  = entrega.tipo==="domicilio" ? "🛵 A domicilio" : "🏪 Recoger en tienda";
+    const pagoLabel  = pago==="efectivo"?"💵 Efectivo":pago==="tarjeta"?"💳 Tarjeta":"📲 Transferencia";
+    const dirCompleta = entrega.tipo==="domicilio"
+      ? `${direccion}${numInt?`, Int. ${numInt}`:""}, ${colonia}, CP ${cp}`
+      : "—";
+
+    // ── EmailJS al dueño (siempre) ──────────────────────────────────────────
+    try {
+      emailjs.init(EJS_PUBLIC);
+      await emailjs.send(EJS_SERVICE, EJS_TPL_TIENDA, {
+        folio,
+        nombre,
+        telefono,
+        email_cliente: email || "No proporcionó",
+        resumen_pedido: resumen,
+        subtotal:  `$${entrega.subtotal.toFixed(0)}`,
+        envio:     entrega.envio===0 ? "Gratis" : `$${entrega.envio.toFixed(0)}`,
+        total:     `$${entrega.total.toFixed(0)}`,
+        tipo_entrega: tipoLabel,
+        horario:   entrega.hora,
+        forma_pago: pagoLabel,
+        direccion: dirCompleta,
+        colonia:   colonia || "—",
+        num_interior: numInt || "—",
+        cp:        cp || "—",
+        notas:     notas || "Sin notas",
+      });
+    } catch (e) {
+      console.error("EmailJS tienda error:", e);
+    }
+
+    // ── EmailJS al cliente (solo si dejó email) ─────────────────────────────
+    if (email.trim()) {
+      try {
+        await emailjs.send(EJS_SERVICE, EJS_TPL_CLIENTE, {
+          folio,
+          nombre,
+          email_cliente: email,
+          resumen_pedido: resumen,
+          total:     `$${entrega.total.toFixed(0)}`,
+          tipo_entrega: tipoLabel,
+          horario:   entrega.hora,
+          forma_pago: pagoLabel,
+          direccion: dirCompleta,
+          notas:     notas || "",
+        });
+      } catch (e) {
+        console.error("EmailJS cliente error:", e);
+      }
+    }
+
+    // ── Telegram ────────────────────────────────────────────────────────────
+    const tgMsg = [
+      `🍓 <b>NUEVO PEDIDO — ${folio}</b>`,
+      ``,
+      `👤 <b>Cliente</b>`,
+      `• Nombre: ${nombre}`,
+      `• Tel: ${telefono}`,
+      `• Email: ${email || "—"}`,
+      `• Pago: ${pagoLabel}`,
+      ``,
+      `📦 <b>Entrega</b>`,
+      `• Tipo: ${tipoLabel}`,
+      `• Horario: ${entrega.hora}`,
+      entrega.tipo==="domicilio" ? `• Dirección: ${dirCompleta}` : "",
+      ``,
+      `🛒 <b>Pedido</b>`,
+      resumen,
+      ``,
+      `💰 Subtotal: $${entrega.subtotal.toFixed(0)}`,
+      `🛵 Envío: ${entrega.envio===0?"Gratis":`$${entrega.envio.toFixed(0)}`}`,
+      `✅ <b>TOTAL: $${entrega.total.toFixed(0)}</b>`,
+      notas ? `\n📝 Notas: ${notas}` : "",
+    ].filter(l => l !== "").join("\n");
+
+    await sendTelegram(tgMsg);
+
     setEnviando(false);
+    onConfirmar({ folio, nombre, telefono, email, direccion, numInt, colonia, cp, pago, notas });
   };
+
   return (
     <div>
       <h2 style={{ fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:22, color:text, margin:"0 0 24px", textAlign:"center" }}>Tus datos</h2>
@@ -458,12 +562,13 @@ function Confirmacion({ folio, nombre, entrega, carrito, onNuevoPedido }) {
   );
 }
 
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [paso,setPaso]=useState(1);
-  const [carrito,setCarrito]=useState([]);
-  const [entrega,setEntrega]=useState(null);
-  const [abierto,setAbierto]=useState(null);
-  const [confirmacion,setConfirmacion]=useState(null);
+  const [paso,setPaso]               = useState(1);
+  const [carrito,setCarrito]         = useState([]);
+  const [entrega,setEntrega]         = useState(null);
+  const [abierto,setAbierto]         = useState(null);
+  const [confirmacion,setConfirmacion] = useState(null);
 
   useEffect(()=>{
     fetch("https://timeapi.io/api/time/current/zone?timeZone=America%2FMexico_City")
@@ -472,17 +577,26 @@ export default function App() {
       .catch(()=>setAbierto(null));
   },[]);
 
-  const agregar=({id,nombre,tamano,precio,emoji})=>{
-    setCarrito(prev=>{ const ex=prev.find(i=>i.id===id&&i.tamano===tamano); if(ex) return prev.map(i=>i===ex?{...i,cantidad:i.cantidad+1}:i); return [...prev,{id,nombre,tamano,precio,emoji,cantidad:1}]; });
+  const agregar = ({ id, nombre, tamano, precio, emoji, toppings }) => {
+    setCarrito(prev => {
+      const ex = prev.find(i=>i.id===id&&i.tamano===tamano);
+      if (ex) return prev.map(i=>i===ex?{...i,cantidad:i.cantidad+1}:i);
+      return [...prev, { id, nombre, tamano, precio, emoji, toppings, cantidad:1 }];
+    });
   };
-  const quitar=(id,tamano)=>{
-    setCarrito(prev=>{ const ex=prev.find(i=>i.id===id&&i.tamano===tamano); if(!ex) return prev; if(ex.cantidad<=1) return prev.filter(i=>i!==ex); return prev.map(i=>i===ex?{...i,cantidad:i.cantidad-1}:i); });
+  const quitar = (id, tamano) => {
+    setCarrito(prev => {
+      const ex = prev.find(i=>i.id===id&&i.tamano===tamano);
+      if (!ex) return prev;
+      if (ex.cantidad <= 1) return prev.filter(i=>i!==ex);
+      return prev.map(i=>i===ex?{...i,cantidad:i.cantidad-1}:i);
+    });
   };
-  const handleConfirmar=async(datos)=>{
-    const num=Math.floor(Math.random()*9999)+1;
-    setConfirmacion({folio:`#FP:${String(num).padStart(4,"0")}`,datos}); setPaso(4);
+  const handleConfirmar = ({ folio, ...datos }) => {
+    setConfirmacion({ folio, datos });
+    setPaso(4);
   };
-  const reset=()=>{ setCarrito([]); setEntrega(null); setConfirmacion(null); setPaso(1); };
+  const reset = () => { setCarrito([]); setEntrega(null); setConfirmacion(null); setPaso(1); };
 
   return (
     <div style={{ background:bg, minHeight:"100vh", color:text, fontFamily:"system-ui,sans-serif" }}>
@@ -509,7 +623,7 @@ export default function App() {
         {paso<4&&<Pasos paso={paso} />}
         {paso===1&&<PasoMenu carrito={carrito} onAdd={agregar} onNext={()=>setPaso(2)} />}
         {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={(id,tamano,precio,emoji,nombre)=>agregar({id,nombre,tamano,precio,emoji})} onNext={e=>{setEntrega(e);setPaso(3);}} onBack={()=>setPaso(1)} />}
-        {paso===3&&<PasoDatos entrega={entrega} onBack={()=>setPaso(2)} onConfirmar={handleConfirmar} />}
+        {paso===3&&<PasoDatos entrega={entrega} carrito={carrito} onBack={()=>setPaso(2)} onConfirmar={handleConfirmar} />}
         {paso===4&&confirmacion&&<Confirmacion folio={confirmacion.folio} nombre={confirmacion.datos.nombre} entrega={entrega} carrito={carrito} onNuevoPedido={reset} />}
       </div>
     </div>
