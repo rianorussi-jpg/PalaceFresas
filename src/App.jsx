@@ -75,6 +75,14 @@ const s = {
   input: { width:"100%", boxSizing:"border-box", background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"13px 16px", fontFamily:"system-ui,sans-serif", fontSize:15, color:text, outline:"none" },
 };
 
+function sameCarritoLine(a, b) {
+  return a.id === b.id && a.tamano === b.tamano && (a.toppings || "") === (b.toppings || "") && a.precio === b.precio;
+}
+
+function carritoLineKey(i) {
+  return `${i.id}|${i.tamano}|${i.toppings || ""}|${i.precio}`;
+}
+
 function buildResumen(carrito) {
   return carrito.map(i => {
     const toppings = i.toppings ? `\n   └ ${i.toppings}` : "";
@@ -352,16 +360,16 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack }) {
       <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:18, marginBottom:20 }}>
         <span style={s.label}>Tu pedido</span>
         {carrito.map(i=>(
-          <div key={`${i.id}-${i.tamano}`} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+          <div key={carritoLineKey(i)} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
             <div style={{ width:44, height:44, borderRadius:8, background:pill, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 }}>{i.emoji}</div>
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:"system-ui,sans-serif", fontSize:14, fontWeight:600, color:text }}>{i.nombre}</div>
               <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted }}>{i.tamano}{i.toppings?` · ${i.toppings}`:""}</div>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <button onClick={()=>onQuitar(i.id,i.tamano)} style={{ background:pill, border:"none", borderRadius:8, width:26, height:26, color:text, cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+              <button onClick={()=>onQuitar(i)} style={{ background:pill, border:"none", borderRadius:8, width:26, height:26, color:text, cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
               <span style={{ fontFamily:"system-ui,sans-serif", fontSize:14, fontWeight:700, color:text, minWidth:16, textAlign:"center" }}>{i.cantidad}</span>
-              <button onClick={()=>onAdd(i.id,i.tamano,i.precio,i.emoji,i.nombre)} style={{ background:pill, border:"none", borderRadius:8, width:26, height:26, color:text, cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+              <button onClick={()=>onAdd(i)} style={{ background:pill, border:"none", borderRadius:8, width:26, height:26, color:text, cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
             </div>
             <span style={{ fontFamily:"system-ui,sans-serif", fontSize:14, fontWeight:700, color:accent, minWidth:52, textAlign:"right" }}>${(i.precio*i.cantidad).toFixed(0)}</span>
           </div>
@@ -498,7 +506,7 @@ function Confirmacion({ folio, nombre, entrega, carrito, onNuevoPedido }) {
         </div>
         <div style={{ borderTop:`1px dashed ${border}`, paddingTop:16 }}>
           {carrito.map(i=>(
-            <div key={`${i.id}-${i.tamano}`} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, fontFamily:"system-ui,sans-serif" }}>
+            <div key={carritoLineKey(i)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, fontFamily:"system-ui,sans-serif" }}>
               <span style={{ fontSize:24, marginRight:8 }}>{i.emoji}</span>
               <span style={{ flex:1, fontSize:14, color:text }}>{i.cantidad}× {i.nombre} <span style={{ color:muted, fontSize:12 }}>({i.tamano}{i.toppings?` · ${i.toppings}`:""})</span></span>
               <span style={{ fontSize:14, fontWeight:700, color:accent }}>${(i.precio*i.cantidad).toFixed(0)}</span>
@@ -531,17 +539,18 @@ export default function App() {
 
   const agregar = ({ id, nombre, tamano, precio, emoji, toppings }) => {
     setCarrito(prev => {
-      const ex = prev.find(i=>i.id===id&&i.tamano===tamano);
-      if (ex) return prev.map(i=>i===ex?{...i,cantidad:i.cantidad+1}:i);
-      return [...prev, { id, nombre, tamano, precio, emoji, toppings, cantidad:1 }];
+      const item = { id, nombre, tamano, precio, emoji, toppings };
+      const ex = prev.find(i => sameCarritoLine(i, item));
+      if (ex) return prev.map(i => i === ex ? { ...i, cantidad: i.cantidad + 1 } : i);
+      return [...prev, { ...item, cantidad: 1 }];
     });
   };
-  const quitar = (id, tamano) => {
+  const quitar = (item) => {
     setCarrito(prev => {
-      const ex = prev.find(i=>i.id===id&&i.tamano===tamano);
+      const ex = prev.find(i => sameCarritoLine(i, item));
       if (!ex) return prev;
-      if (ex.cantidad<=1) return prev.filter(i=>i!==ex);
-      return prev.map(i=>i===ex?{...i,cantidad:i.cantidad-1}:i);
+      if (ex.cantidad <= 1) return prev.filter(i => i !== ex);
+      return prev.map(i => i === ex ? { ...i, cantidad: i.cantidad - 1 } : i);
     });
   };
   const handleConfirmar = ({ folio, ...datos }) => { setConfirmacion({ folio, datos }); setPaso(4); };
@@ -571,7 +580,7 @@ export default function App() {
       <div style={{ maxWidth:520, margin:"0 auto", padding:"24px 16px 40px" }}>
         {paso<4&&<Pasos paso={paso} />}
         {paso===1&&<PasoMenu carrito={carrito} onAdd={agregar} onNext={()=>setPaso(2)} />}
-        {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={(id,tamano,precio,emoji,nombre)=>agregar({id,nombre,tamano,precio,emoji})} onNext={e=>{setEntrega(e);setPaso(3);}} onBack={()=>setPaso(1)} />}
+        {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={agregar} onNext={e=>{setEntrega(e);setPaso(3);}} onBack={()=>setPaso(1)} />}
         {paso===3&&<PasoDatos entrega={entrega} carrito={carrito} onBack={()=>setPaso(2)} onConfirmar={handleConfirmar} />}
         {paso===4&&confirmacion&&<Confirmacion folio={confirmacion.folio} nombre={confirmacion.datos.nombre} entrega={entrega} carrito={carrito} onNuevoPedido={reset} />}
       </div>
