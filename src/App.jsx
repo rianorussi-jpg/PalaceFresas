@@ -43,6 +43,9 @@ const MENU = {
       { id:"elote",              emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
       { id:"chicharron-preparado", emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy",         emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
+      { id:"tosticrazy-xl",      emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
+      { id:"sopa-preparada",     emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":55, "Amarillo":60 }, tipo:"grano" },
+      { id:"marranada",          emoji:"🐷", nombre:"Marranada",          desc:"Antojito especial de la casa",                                precios:{ "Regular":70 } },
     ],
   },
   fresas: {
@@ -281,16 +284,21 @@ function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) 
 function ProductoCard({ item, onAdd, carritoItems }) {
   const tamanos    = Object.keys(item.precios);
   const [tam, setTam]             = useState(tamanos[0]);
+  const [conTocino, setConTocino] = useState(false);
   const [flash, setFlash]         = useState(false);
   const [showModal, setShowModal] = useState(false);
   const esGrano    = item.tipo === "grano";
   const esFresa    = item.id.startsWith("fresas-");
   const esEspecial = item.tipo === "especial";
   const enCarrito  = carritoItems.filter(i=>i.id===item.id).reduce((s,i)=>s+i.cantidad,0);
+  const precioActual = item.precios[tam] + (esGrano && conTocino ? 10 : 0);
 
   const handleAdd = () => {
     if (esFresa || esEspecial) { setShowModal(true); return; }
-    onAdd({ id:item.id, nombre:item.nombre, tamano:esGrano?`Grano ${tam}`:tam, precio:item.precios[tam], emoji:item.emoji });
+    const tamanoLabel = esGrano
+      ? `Grano ${tam}${conTocino ? " · Con tocino" : ""}`
+      : tam;
+    onAdd({ id:item.id, nombre:item.nombre, tamano:tamanoLabel, precio:precioActual, emoji:item.emoji });
     setFlash(true); setTimeout(()=>setFlash(false),900);
   };
   const handleToppingConfirm = ({ toppingDesc, precioFinal }) => {
@@ -315,8 +323,9 @@ function ProductoCard({ item, onAdd, carritoItems }) {
           {esGrano ? (
             <div>
               <span style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.08em" }}>Grano:</span>
-              <div style={{ display:"flex", gap:6, marginTop:5 }}>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:5, alignItems:"center" }}>
                 {tamanos.map(t=><button key={t} onClick={()=>setTam(t)} style={{ border:`1.5px solid ${t===tam?accent:border}`, background:t===tam?accent+"22":"none", borderRadius:8, padding:"4px 12px", fontFamily:"system-ui,sans-serif", fontSize:11, color:t===tam?accent:muted, cursor:"pointer", fontWeight:600 }}>{t}</button>)}
+                <button onClick={()=>setConTocino(v=>!v)} style={{ border:`1.5px solid ${conTocino?accent:border}`, background:conTocino?accent+"22":"none", borderRadius:8, padding:"4px 12px", fontFamily:"system-ui,sans-serif", fontSize:11, color:conTocino?accent:muted, cursor:"pointer", fontWeight:600 }}>Con tocino +$10</button>
               </div>
             </div>
           ) : tamanos.length>1 ? (
@@ -326,7 +335,7 @@ function ProductoCard({ item, onAdd, carritoItems }) {
           ) : null}
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
-          <span style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:17, color:accent }}>${item.precios[tam]}</span>
+          <span style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:17, color:accent }}>${precioActual}</span>
           <button onClick={handleAdd} style={{ border:"none", cursor:"pointer", borderRadius:10, padding:"7px 14px", background:flash?"#2a7c3a":pill, color:flash?"#7fff9f":text, fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, transition:"all 0.2s", whiteSpace:"nowrap" }}>
             {flash?"✓":enCarrito>0?`+1 (${enCarrito})`:esEspecial?`${item.emoji} Armar`:esFresa?"🍓 Armar":"+Agregar"}
           </button>
