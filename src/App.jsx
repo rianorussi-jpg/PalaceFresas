@@ -35,6 +35,9 @@ const MENU = {
       { id:"esquites-chico",   emoji:"🌽", nombre:"Esquites Chico",   desc:"Porción chica al estilo Veracruz",   precios:{ "Amarillo":50, "Natural":45 }, tipo:"grano" },
       { id:"esquites-mediano", emoji:"🌽", nombre:"Esquites Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
       { id:"esquites-grande",  emoji:"🌽", nombre:"Esquites Grande",  desc:"Porción grande al estilo Veracruz",  precios:{ "Amarillo":70, "Natural":65 }, tipo:"grano" },
+      { id:"elote",              emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
+      { id:"chicharron-preparado", emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
+      { id:"tosticrazy",         emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
     ],
   },
   fresas: {
