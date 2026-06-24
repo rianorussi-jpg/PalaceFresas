@@ -44,7 +44,7 @@ const MENU = {
       { id:"chicharron-preparado", emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy",         emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy-xl",      emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
-      { id:"sopa-preparada",     emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":55, "Amarillo":60 }, tipo:"grano" },
+      { id:"sopa-preparada",     emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":85, "Amarillo":90 }, tipo:"grano" },
       { id:"marranada",          emoji:"🐷", nombre:"Marranada",          desc:"Antojito especial de la casa",                                precios:{ "Regular":70 } },
     ],
   },
@@ -324,7 +324,12 @@ function ProductoCard({ item, onAdd, carritoItems }) {
             <div>
               <span style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.08em" }}>Grano:</span>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:5, alignItems:"center" }}>
-                {tamanos.map(t=><button key={t} onClick={()=>setTam(t)} style={{ border:`1.5px solid ${t===tam?accent:border}`, background:t===tam?accent+"22":"none", borderRadius:8, padding:"4px 12px", fontFamily:"system-ui,sans-serif", fontSize:11, color:t===tam?accent:muted, cursor:"pointer", fontWeight:600 }}>{t}</button>)}
+                {tamanos.map(t=>{
+                  const label = t === "Amarillo" && item.precios.Natural != null
+                    ? `Amarillo +$${item.precios.Amarillo - item.precios.Natural}`
+                    : t;
+                  return <button key={t} onClick={()=>setTam(t)} style={{ border:`1.5px solid ${t===tam?accent:border}`, background:t===tam?accent+"22":"none", borderRadius:8, padding:"4px 12px", fontFamily:"system-ui,sans-serif", fontSize:11, color:t===tam?accent:muted, cursor:"pointer", fontWeight:600 }}>{label}</button>;
+                })}
                 <button onClick={()=>setConTocino(v=>!v)} style={{ border:`1.5px solid ${conTocino?accent:border}`, background:conTocino?accent+"22":"none", borderRadius:8, padding:"4px 12px", fontFamily:"system-ui,sans-serif", fontSize:11, color:conTocino?accent:muted, cursor:"pointer", fontWeight:600 }}>Con tocino +$10</button>
               </div>
             </div>
