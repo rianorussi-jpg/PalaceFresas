@@ -67,8 +67,40 @@ const MENU = {
   },
 };
 
-const HORARIOS = ["Lo antes posible","11:00–12:00","12:00–13:00","13:00–14:00","16:00–17:00","17:00–18:00","18:00–19:00","19:00–20:00"];
 const ZONAS    = ["Martí","Colón","Centro","Boca del Río","Veracruz Norte","Veracruz Sur","Reforma","Flores Magón","Costa Verde"];
+
+const DOW_MAP = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+
+function parseDayOfWeek(data) {
+  if (typeof data.dayOfWeek === "string") return DOW_MAP[data.dayOfWeek] ?? 0;
+  if (typeof data.dayOfWeek === "number") return data.dayOfWeek;
+  return new Date(`${data.year}-${String(data.month).padStart(2,"0")}-${String(data.day).padStart(2,"0")}T12:00:00`).getDay();
+}
+
+function estaAbierto(hour, minute, dayOfWeek) {
+  const mins = hour * 60 + minute;
+  const open = 16 * 60;
+  const closeRegular = 23 * 60;
+  if (mins < 60) {
+    const ayer = (dayOfWeek + 6) % 7;
+    return ayer === 5 || ayer === 6;
+  }
+  if (mins < open) return false;
+  if (dayOfWeek === 5 || dayOfWeek === 6) return true;
+  return mins < closeRegular;
+}
+
+function getHorarios(dayOfWeek, hour = 16) {
+  const slots = [
+    "Lo antes posible",
+    "16:00–17:00", "17:00–18:00", "18:00–19:00", "19:00–20:00",
+    "20:00–21:00", "21:00–22:00", "22:00–23:00",
+  ];
+  const ayer = (dayOfWeek + 6) % 7;
+  const finSemana = dayOfWeek === 5 || dayOfWeek === 6 || (hour < 1 && (ayer === 5 || ayer === 6));
+  if (finSemana) slots.push("23:00–00:00", "00:00–01:00");
+  return slots;
+}
 
 const s = {
   label: { fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, textTransform:"uppercase", letterSpacing:"0.12em", display:"block", marginBottom:8 },
@@ -331,9 +363,14 @@ function PasoMenu({ carrito, onAdd, onNext }) {
   );
 }
 
-function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack }) {
+function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
+  const slots = horarios ?? getHorarios(new Date().getDay());
   const [tipo, setTipo] = useState("domicilio");
-  const [hora, setHora] = useState(HORARIOS[0]);
+  const [hora, setHora] = useState(slots[0]);
+
+  useEffect(() => {
+    if (!slots.includes(hora)) setHora(slots[0]);
+  }, [slots, hora]);
   const subtotal = carrito.reduce((s,i)=>s+i.precio*i.cantidad,0);
   const envio    = tipo==="domicilio"&&subtotal<200?30:0;
   const total    = subtotal+envio;
@@ -354,7 +391,7 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack }) {
       <div style={{ marginBottom:20 }}>
         <span style={s.label}>{tipo==="domicilio"?"Horario de entrega":"Hora para recoger"}</span>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {HORARIOS.map(h=><button key={h} onClick={()=>setHora(h)} style={{ border:`1.5px solid ${h===hora?accent:border}`, background:h===hora?accent+"22":card, borderRadius:10, padding:"8px 14px", fontFamily:"system-ui,sans-serif", fontSize:12, fontWeight:600, color:h===hora?accent:muted, cursor:"pointer" }}>{h}</button>)}
+          {slots.map(h=><button key={h} onClick={()=>setHora(h)} style={{ border:`1.5px solid ${h===hora?accent:border}`, background:h===hora?accent+"22":card, borderRadius:10, padding:"8px 14px", fontFamily:"system-ui,sans-serif", fontSize:12, fontWeight:600, color:h===hora?accent:muted, cursor:"pointer" }}>{h}</button>)}
         </div>
       </div>
       <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:18, marginBottom:20 }}>
@@ -528,12 +565,17 @@ export default function App() {
   const [carrito,setCarrito]           = useState([]);
   const [entrega,setEntrega]           = useState(null);
   const [abierto,setAbierto]           = useState(null);
+  const [horariosDia,setHorariosDia]   = useState(() => getHorarios(new Date().getDay()));
   const [confirmacion,setConfirmacion] = useState(null);
 
   useEffect(()=>{
     fetch("https://timeapi.io/api/time/current/zone?timeZone=America%2FMexico_City")
       .then(r=>r.json())
-      .then(data=>{ const mins=data.hour*60+data.minute; setAbierto(mins>=10*60&&mins<21*60); })
+      .then(data=>{
+        const dow = parseDayOfWeek(data);
+        setAbierto(estaAbierto(data.hour, data.minute, dow));
+        setHorariosDia(getHorarios(dow, data.hour));
+      })
       .catch(()=>setAbierto(null));
   },[]);
 
@@ -573,8 +615,9 @@ export default function App() {
           </div>
         </div>
         {abierto!==null&&(
-          <div style={{ background:abierto?"#1a0020":"#1a1a1a", border:`1.5px solid ${abierto?accent:"#555"}`, borderRadius:20, padding:"6px 14px", fontFamily:"system-ui,sans-serif", fontSize:12, fontWeight:700, color:"#fcfcfc", display:"flex", alignItems:"center", gap:5 }}>
-            <span>{abierto?"⚡":"🌙"}</span>{abierto?"Abierto ahora":"Cerrado"}
+          <div style={{ background:abierto?"#1a0020":"#1a1a1a", border:`1.5px solid ${abierto?accent:"#555"}`, borderRadius:20, padding:"6px 14px", fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:"#fcfcfc", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2, lineHeight:1.2 }}>
+            <span style={{ display:"flex", alignItems:"center", gap:5 }}><span>{abierto?"⚡":"🌙"}</span>{abierto?"Abierto ahora":"Cerrado"}</span>
+            {!abierto&&<span style={{ fontSize:10, fontWeight:500, color:"#bbb" }}>Volvemos a las 16:00</span>}
           </div>
         )}
       </div>
@@ -585,7 +628,7 @@ export default function App() {
       <div style={{ maxWidth:520, margin:"0 auto", padding:"24px 16px 40px" }}>
         {paso<4&&<Pasos paso={paso} />}
         {paso===1&&<PasoMenu carrito={carrito} onAdd={agregar} onNext={()=>setPaso(2)} />}
-        {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={agregar} onNext={e=>{setEntrega(e);setPaso(3);}} onBack={()=>setPaso(1)} />}
+        {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={agregar} horarios={horariosDia} onNext={e=>{setEntrega(e);setPaso(3);}} onBack={()=>setPaso(1)} />}
         {paso===3&&<PasoDatos entrega={entrega} carrito={carrito} onBack={()=>setPaso(2)} onConfirmar={handleConfirmar} />}
         {paso===4&&confirmacion&&<Confirmacion folio={confirmacion.folio} nombre={confirmacion.datos.nombre} entrega={entrega} carrito={carrito} onNuevoPedido={reset} />}
       </div>
