@@ -35,6 +35,11 @@ const MENU = {
       { id:"esquites-chico",   emoji:"🌽", nombre:"Esquites Chico",   desc:"Porción chica al estilo Veracruz",   precios:{ "Amarillo":50, "Natural":45 }, tipo:"grano" },
       { id:"esquites-mediano", emoji:"🌽", nombre:"Esquites Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
       { id:"esquites-grande",  emoji:"🌽", nombre:"Esquites Grande",  desc:"Porción grande al estilo Veracruz",  precios:{ "Amarillo":70, "Natural":65 }, tipo:"grano" },
+    ],
+  },
+  antojitos: {
+    label: "Antojitos", emoji: "🌮",
+    items: [
       { id:"elote",              emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
       { id:"chicharron-preparado", emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy",         emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
@@ -176,22 +181,25 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
   );
 }
 
-// ── Modal Dubai / Lotus (todo opcional, sin gratis) ───────────────────────────
+// ── Modal Dubai / Lotus (básicos +$10, resto opcional) ───────────────────────
 function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) {
+  const [selBasicos,  setSelBasicos]  = useState([]);
   const [selPremium,  setSelPremium]  = useState([]);
   const [selEspecial, setSelEspecial] = useState(null);
   const [selJarabe,   setSelJarabe]   = useState(null);
 
+  const toggleBasicos = (t) => { if (selBasicos.includes(t)) { setSelBasicos(selBasicos.filter(x=>x!==t)); return; } setSelBasicos([...selBasicos, t]); };
   const togglePremium = (t) => { if (selPremium.includes(t.nombre)) { setSelPremium(selPremium.filter(x=>x!==t.nombre)); return; } setSelPremium([...selPremium, t.nombre]); };
 
+  const extraBasicos  = selBasicos.length * 10;
   const extraPremium  = selPremium.length * 30;
   const extraEspecial = selEspecial ? 20 : 0;
   const extraJarabe   = selJarabe ? 10 : 0;
-  const totalExtra    = extraPremium + extraEspecial + extraJarabe;
+  const totalExtra    = extraBasicos + extraPremium + extraEspecial + extraJarabe;
   const precioFinal   = precioBase + totalExtra;
 
   const handleConfirm = () => {
-    const toppingDesc = [...selPremium.map(t=>`${t} (+$30)`), ...(selEspecial?[`${selEspecial} (+$20)`]:[]), ...(selJarabe?[`Jarabe ${selJarabe} (+$10)`]:[])].join(", ");
+    const toppingDesc = [...selBasicos.map(t=>`${t} (+$10)`), ...selPremium.map(t=>`${t} (+$30)`), ...(selEspecial?[`${selEspecial} (+$20)`]:[]), ...(selJarabe?[`Jarabe ${selJarabe} (+$10)`]:[])].join(", ");
     onConfirm({ toppingDesc: toppingDesc || "Sin toppings extra", precioFinal });
   };
 
@@ -210,6 +218,8 @@ function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) 
           </div>
           <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
         </div>
+        <div style={secTitle}>🎉 Básicos — +$10 c/u</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_GRATIS.map(t=><button key={t} onClick={()=>toggleBasicos(t)} style={chip(selBasicos.includes(t))}>{t} <span style={{ fontSize:11, color:selBasicos.includes(t)?accent:muted }}>+$10</span></button>)}</div>
         <div style={secTitle}>⭐ Premium — +$30 c/u</div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_PREMIUM.map(t=><button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>{t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span></button>)}</div>
         <div style={secTitle}>✨ Especial — +$20</div>
