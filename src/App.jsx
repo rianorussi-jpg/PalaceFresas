@@ -41,11 +41,11 @@ const MENU = {
     label: "Antojitos", emoji: "🌮",
     items: [
       { id:"elote",               img:"https://i.ibb.co/jvN9xfJ9/PHOTO-2026-06-23-21-30-15.jpg",               emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
-      { id:"chicharron-preparado",img:"https://i.ibb.co/placeholder/chicharron-preparado.jpg",emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
+      { id:"chicharron-preparado",img:"https://i.ibb.co/svfX5Kxc/PHOTO-2026-06-23-21-15-36.jpg",emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy",          img:"https://i.ibb.co/Cy27x3q/PHOTO-2026-06-23-21-30-15-2.jpg",          emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy-xl",       img:"https://i.ibb.co/Cy27x3q/PHOTO-2026-06-23-21-30-15-2.jpg",       emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
       { id:"sopa-preparada",      img:"https://i.ibb.co/RJv4530/PHOTO-2026-06-23-21-30-14-6.jpg",      emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":85, "Amarillo":90 }, tipo:"grano" },
-      { id:"marranada",           img:"https://i.ibb.co/placeholder/marranada.jpg",           emoji:"🐷", nombre:"Marranada",          desc:"Antojito especial de la casa",                                precios:{ "Regular":70 } },
+      { id:"marranada",           img:"https://i.ibb.co/svfX5Kxc/PHOTO-2026-06-23-21-15-36.jpg",           emoji:"🐷", nombre:"Marranada",          desc:"Antojito especial de la casa",                                precios:{ "Regular":70 } },
     ],
   },
   fresas: {
@@ -72,10 +72,10 @@ const MENU = {
     label: "Bebidas", emoji: "🥤",
     items: [
       { id:"coca-original",   img:"https://png.pngtree.com/png-vector/20231115/ourmid/pngtree-coca-cola-bottled-drink-isolated-png-image_10465016.png",   emoji:"🥤", nombre:"Coca Cola Original", desc:"Refresco Coca Cola 600ml",     precios:{ "600ml":35 } },
-      { id:"sprite",          img:"https://i.ibb.co/placeholder/sprite.jpg",          emoji:"🥤", nombre:"Sprite",             desc:"Refresco Sprite 600ml",         precios:{ "600ml":35 } },
-      { id:"fresca",          img:"https://i.ibb.co/placeholder/fresca.jpg",          emoji:"🥤", nombre:"Fresca",             desc:"Refresco Fresca 600ml",         precios:{ "600ml":35 } },
-      { id:"coca-sin-azucar", img:"https://i.ibb.co/placeholder/coca-sin-azucar.jpg", emoji:"🥤", nombre:"Coca Sin Azúcar",    desc:"Coca Cola sin azúcar 355ml",   precios:{ "355ml":25 } },
-      { id:"arizona",         img:"https://i.ibb.co/placeholder/arizona.jpg",         emoji:"🍵", nombre:"Arizona",            desc:"Té Arizona 570ml — elige tu sabor favorito", precios:{ "570ml":35 }, tipo:"arizona" },
+      { id:"sprite",          img:"https://pngimg.com/uploads/sprite/sprite_PNG98770.png",          emoji:"🥤", nombre:"Sprite",             desc:"Refresco Sprite 600ml",         precios:{ "600ml":35 } },
+      { id:"fresca",          img:"https://arteli.vtexassets.com/arquivos/ids/208426/7501055303786_00.jpg?v=638576468579870000",          emoji:"🥤", nombre:"Fresca",             desc:"Refresco Fresca 600ml",         precios:{ "600ml":35 } },
+      { id:"coca-sin-azucar", img:"https://arteli.vtexassets.com/arquivos/ids/244649-800-auto?v=638635767866100000&width=800&height=auto&aspect=true", emoji:"🥤", nombre:"Coca Sin Azúcar",    desc:"Coca Cola sin azúcar 355ml",   precios:{ "355ml":25 } },
+      { id:"arizona",         img:"https://img.ele-gate.com/wp-content/uploads/2025/07/arizona6.png",         emoji:"🍵", nombre:"Arizona",            desc:"Té Arizona 570ml — elige tu sabor favorito", precios:{ "570ml":35 }, tipo:"arizona" },
     ],
   },
 };
