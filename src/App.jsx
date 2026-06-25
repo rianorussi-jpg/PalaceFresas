@@ -32,28 +32,28 @@ const MENU = {
   esquites: {
     label: "Esquites", emoji: "🌽",
     items: [
-      { id:"esquites-chico",   img:"https://i.ibb.co/placeholder/esquites-chico.jpg",   emoji:"🌽", nombre:"Esquites Chico",   desc:"Porción chica al estilo Veracruz",   precios:{ "Amarillo":50, "Natural":45 }, tipo:"grano" },
-      { id:"esquites-mediano", img:"https://i.ibb.co/placeholder/esquites-mediano.jpg", emoji:"🌽", nombre:"Esquites Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
-      { id:"esquites-grande",  img:"https://i.ibb.co/placeholder/esquites-grande.jpg",  emoji:"🌽", nombre:"Esquites Grande",  desc:"Porción grande al estilo Veracruz",  precios:{ "Amarillo":70, "Natural":65 }, tipo:"grano" },
+      { id:"esquites-chico",   img:"https://i.ibb.co/ch40LsDt/PHOTO-2026-06-23-21-30-14-5.jpg",   emoji:"🌽", nombre:"Esquites Chico",   desc:"Porción chica al estilo Veracruz",   precios:{ "Amarillo":50, "Natural":45 }, tipo:"grano" },
+      { id:"esquites-mediano", img:"https://i.ibb.co/ch40LsDt/PHOTO-2026-06-23-21-30-14-5.jpg", emoji:"🌽", nombre:"Esquites Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
+      { id:"esquites-grande",  img:"https://i.ibb.co/ch40LsDt/PHOTO-2026-06-23-21-30-14-5.jpg",  emoji:"🌽", nombre:"Esquites Grande",  desc:"Porción grande al estilo Veracruz",  precios:{ "Amarillo":70, "Natural":65 }, tipo:"grano" },
     ],
   },
   antojitos: {
     label: "Antojitos", emoji: "🌮",
     items: [
-      { id:"elote",               img:"https://i.ibb.co/placeholder/elote.jpg",               emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
+      { id:"elote",               img:"https://i.ibb.co/jvN9xfJ9/PHOTO-2026-06-23-21-30-15.jpg",               emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
       { id:"chicharron-preparado",img:"https://i.ibb.co/placeholder/chicharron-preparado.jpg",emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
-      { id:"tosticrazy",          img:"https://i.ibb.co/placeholder/tosticrazy.jpg",          emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
-      { id:"tosticrazy-xl",       img:"https://i.ibb.co/placeholder/tosticrazy-xl.jpg",       emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
-      { id:"sopa-preparada",      img:"https://i.ibb.co/placeholder/sopa-preparada.jpg",      emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":85, "Amarillo":90 }, tipo:"grano" },
+      { id:"tosticrazy",          img:"https://i.ibb.co/Cy27x3q/PHOTO-2026-06-23-21-30-15-2.jpg",          emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
+      { id:"tosticrazy-xl",       img:"https://i.ibb.co/Cy27x3q/PHOTO-2026-06-23-21-30-15-2.jpg",       emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
+      { id:"sopa-preparada",      img:"https://i.ibb.co/RJv4530/PHOTO-2026-06-23-21-30-14-6.jpg",      emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":85, "Amarillo":90 }, tipo:"grano" },
       { id:"marranada",           img:"https://i.ibb.co/placeholder/marranada.jpg",           emoji:"🐷", nombre:"Marranada",          desc:"Antojito especial de la casa",                                precios:{ "Regular":70 } },
     ],
   },
   fresas: {
     label: "Fresas con Crema", emoji: "🍓",
     items: [
-      { id:"fresas-chica",   img:"https://i.ibb.co/ksgdWXQ1/PHOTO-2026-06-23-21-30-15-5.jpg",   emoji:"🍓", nombre:"Fresas con Crema Chica",   desc:"Fresas frescas con crema, tamaño chico",   precios:{ "Chica":45 } },
-      { id:"fresas-mediana", img:"https://i.ibb.co/placeholder/fresas-mediana.jpg", emoji:"🍓", nombre:"Fresas con Crema Mediana", desc:"Fresas frescas con crema, tamaño mediano", precios:{ "Mediana":90 } },
-      { id:"fresas-grande",  img:"https://i.ibb.co/placeholder/fresas-grande.jpg",  emoji:"🍓", nombre:"Fresas con Crema Grande",  desc:"Fresas frescas con crema, tamaño grande",  precios:{ "Grande":170 } },
+      { id:"fresas-chica",   img:"https://i.ibb.co/SqtB4wC/PHOTO-2026-06-23-21-30-15-4.jpg",   emoji:"🍓", nombre:"Fresas con Crema Chica",   desc:"Fresas frescas con crema, tamaño chico",   precios:{ "Chica":45 } },
+      { id:"fresas-mediana", img:"https://i.ibb.co/ksgdWXQ1/PHOTO-2026-06-23-21-30-15-5.jpg", emoji:"🍓", nombre:"Fresas con Crema Mediana", desc:"Fresas frescas con crema, tamaño mediano", precios:{ "Mediana":90 } },
+      { id:"fresas-grande",  img:"https://i.ibb.co/yrJHDhn/Captura-de-pantalla-2026-06-25-a-la-s-16-51-20.png",  emoji:"🍓", nombre:"Fresas con Crema Grande",  desc:"Fresas frescas con crema, tamaño grande",  precios:{ "Grande":170 } },
     ],
   },
   dubai: {
