@@ -663,7 +663,7 @@ function HeaderCarrito({ carrito, abierto }) {
     <div style={{ borderBottom:`1px solid ${border}`, padding:"16px 20px 0", position:"sticky", top:0, background:bg, zIndex:10 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: tieneItems ? 12 : 16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ fontSize:32 }}>🍓</span>
+<img src="https://i.ibb.co/9mDjcygT/Disen-o-sin-ti-tulo-6.png" alt="Fresas Palace" style={{ width:42, height:42, borderRadius:10, objectFit:"cover" }} />
           <div>
             <div style={{ fontWeight:800, fontSize:18, lineHeight:1.1 }}>Fresas Palace</div>
             <div style={{ fontSize:12, color:muted }}>Entrega y recolección · Veracruz</div>
