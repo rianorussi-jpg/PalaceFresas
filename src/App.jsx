@@ -71,7 +71,7 @@ const MENU = {
   bebidas: {
     label: "Bebidas", emoji: "🥤",
     items: [
-      { id:"coca-original",   img:"https://i.ibb.co/placeholder/coca-original.jpg",   emoji:"🥤", nombre:"Coca Cola Original", desc:"Refresco Coca Cola 600ml",     precios:{ "600ml":35 } },
+      { id:"coca-original",   img:"https://png.pngtree.com/png-vector/20231115/ourmid/pngtree-coca-cola-bottled-drink-isolated-png-image_10465016.png",   emoji:"🥤", nombre:"Coca Cola Original", desc:"Refresco Coca Cola 600ml",     precios:{ "600ml":35 } },
       { id:"sprite",          img:"https://i.ibb.co/placeholder/sprite.jpg",          emoji:"🥤", nombre:"Sprite",             desc:"Refresco Sprite 600ml",         precios:{ "600ml":35 } },
       { id:"fresca",          img:"https://i.ibb.co/placeholder/fresca.jpg",          emoji:"🥤", nombre:"Fresca",             desc:"Refresco Fresca 600ml",         precios:{ "600ml":35 } },
       { id:"coca-sin-azucar", img:"https://i.ibb.co/placeholder/coca-sin-azucar.jpg", emoji:"🥤", nombre:"Coca Sin Azúcar",    desc:"Coca Cola sin azúcar 355ml",   precios:{ "355ml":25 } },
