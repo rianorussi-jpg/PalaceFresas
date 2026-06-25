@@ -68,6 +68,16 @@ const MENU = {
       { id:"lotus", emoji:"🌸", nombre:"Fresas Lotus", desc:"Fresas con crema estilo Lotus", precios:{ "Chica":70, "Mediana":120, "Grande":205 }, tipo:"especial" },
     ],
   },
+  bebidas: {
+    label: "Bebidas", emoji: "🥤",
+    items: [
+      { id:"coca-original",   emoji:"🥤", nombre:"Coca Cola Original", desc:"Refresco Coca Cola 600ml",     precios:{ "600ml":35 } },
+      { id:"sprite",          emoji:"🥤", nombre:"Sprite",             desc:"Refresco Sprite 600ml",         precios:{ "600ml":35 } },
+      { id:"fresca",          emoji:"🥤", nombre:"Fresca",             desc:"Refresco Fresca 600ml",         precios:{ "600ml":35 } },
+      { id:"coca-sin-azucar", emoji:"🥤", nombre:"Coca Sin Azúcar",    desc:"Coca Cola sin azúcar 355ml",   precios:{ "355ml":25 } },
+      { id:"arizona",         emoji:"🍵", nombre:"Arizona",            desc:"Té Arizona 570ml — elige tu sabor favorito", precios:{ "570ml":35 }, tipo:"arizona" },
+    ],
+  },
 };
 
 const ZONAS    = ["Martí","Colón","Centro","Boca del Río","Veracruz Norte","Veracruz Sur","Reforma","Flores Magón","Costa Verde"];
@@ -281,6 +291,54 @@ function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) 
   );
 }
 
+// ── Modal Arizona (selección de sabor) ───────────────────────────────────────
+const ARIZONA_SABORES = ["Mango","Ponche","Fresa Kiwi","Sandía","Té Verde"];
+
+function ArizonaModal({ item, precioBase, onConfirm, onClose }) {
+  const [sabor, setSabor] = useState(null);
+  const [error, setError] = useState("");
+
+  const handleConfirm = () => {
+    if (!sabor) { setError("Elige un sabor para continuar"); setTimeout(()=>setError(""),2000); return; }
+    onConfirm({ toppingDesc: sabor, precioFinal: precioBase });
+  };
+
+  const overlay  = { position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center" };
+  const sheet    = { background:bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 36px", maxWidth:520, width:"100%", maxHeight:"90vh", overflowY:"auto" };
+  const chip     = (sel) => ({ border:`1.5px solid ${sel?accent:border}`, background:sel?accent+"22":card, borderRadius:10, padding:"10px 16px", cursor:"pointer", fontFamily:"system-ui,sans-serif", fontSize:14, fontWeight:600, color:sel?accent:text, display:"flex", alignItems:"center", gap:8, flex:"1 1 calc(50% - 4px)" });
+
+  return (
+    <div style={overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={sheet}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+          <div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:18, color:text }}>Elige tu sabor 🍵</div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontSize:13, color:muted, marginTop:3 }}>Arizona 570ml</div>
+          </div>
+          <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+        </div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+          {ARIZONA_SABORES.map(s=>(
+            <button key={s} onClick={()=>setSabor(s)} style={chip(sabor===s)}>
+              {s==="Mango"?"🥭":s==="Ponche"?"🍊":s==="Fresa Kiwi"?"🍓":s==="Sandía"?"🍉":"🌿"} {s}
+              {sabor===s&&<span style={{ marginLeft:"auto", fontSize:16 }}>✓</span>}
+            </button>
+          ))}
+        </div>
+        {error && <div style={{ background:accent+"18", border:`1px solid ${accent}55`, borderRadius:10, padding:"10px 14px", fontFamily:"system-ui,sans-serif", fontSize:13, color:accent, marginTop:14 }}>{error}</div>}
+        <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"14px 16px", marginTop:20, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted }}>Sabor seleccionado</div>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:20, color:accent }}>{sabor ? sabor : "—"} · $35</div>
+          </div>
+          <button onClick={handleConfirm} style={{ background:accent, border:"none", borderRadius:12, padding:"12px 22px", fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, color:"#fff", cursor:"pointer" }}>+ Agregar 🍵</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function ProductoCard({ item, onAdd, carritoItems }) {
   const tamanos    = Object.keys(item.precios);
   const [tam, setTam]             = useState(tamanos[0]);
@@ -290,11 +348,12 @@ function ProductoCard({ item, onAdd, carritoItems }) {
   const esGrano    = item.tipo === "grano";
   const esFresa    = item.id.startsWith("fresas-");
   const esEspecial = item.tipo === "especial";
+  const esArizona  = item.tipo === "arizona";
   const enCarrito  = carritoItems.filter(i=>i.id===item.id).reduce((s,i)=>s+i.cantidad,0);
   const precioActual = item.precios[tam] + (esGrano && conTocino ? 10 : 0);
 
   const handleAdd = () => {
-    if (esFresa || esEspecial) { setShowModal(true); return; }
+    if (esFresa || esEspecial || esArizona) { setShowModal(true); return; }
     const tamanoLabel = esGrano
       ? `Grano ${tam}${conTocino ? " · Con tocino" : ""}`
       : tam;
@@ -314,6 +373,9 @@ function ProductoCard({ item, onAdd, carritoItems }) {
       )}
       {showModal && esEspecial && (
         <ToppingModalOpcional item={item} tamano={tam} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
+      )}
+      {showModal && esArizona && (
+        <ArizonaModal item={item} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
       )}
       <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:"16px", display:"flex", alignItems:"center", gap:14 }}>
         <div style={{ width:68, height:68, borderRadius:14, background:pill, display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, flexShrink:0 }}>{item.emoji}</div>
@@ -342,7 +404,7 @@ function ProductoCard({ item, onAdd, carritoItems }) {
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
           <span style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:17, color:accent }}>${precioActual}</span>
           <button onClick={handleAdd} style={{ border:"none", cursor:"pointer", borderRadius:10, padding:"7px 14px", background:flash?"#2a7c3a":pill, color:flash?"#7fff9f":text, fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, transition:"all 0.2s", whiteSpace:"nowrap" }}>
-            {flash?"✓":enCarrito>0?`+1 (${enCarrito})`:esEspecial?`${item.emoji} Armar`:esFresa?"🍓 Armar":"+Agregar"}
+            {flash?"✓":enCarrito>0?`+1 (${enCarrito})`:esArizona?"🍵 Sabor":esEspecial?`${item.emoji} Armar`:esFresa?"🍓 Armar":"+Agregar"}
           </button>
         </div>
       </div>
