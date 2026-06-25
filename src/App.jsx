@@ -32,50 +32,50 @@ const MENU = {
   esquites: {
     label: "Esquites", emoji: "🌽",
     items: [
-      { id:"esquites-chico",   emoji:"🌽", nombre:"Esquites Chico",   desc:"Porción chica al estilo Veracruz",   precios:{ "Amarillo":50, "Natural":45 }, tipo:"grano" },
-      { id:"esquites-mediano", emoji:"🌽", nombre:"Esquites Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
-      { id:"esquites-grande",  emoji:"🌽", nombre:"Esquites Grande",  desc:"Porción grande al estilo Veracruz",  precios:{ "Amarillo":70, "Natural":65 }, tipo:"grano" },
+      { id:"esquites-chico",   img:"https://i.ibb.co/placeholder/esquites-chico.jpg",   emoji:"🌽", nombre:"Esquites Chico",   desc:"Porción chica al estilo Veracruz",   precios:{ "Amarillo":50, "Natural":45 }, tipo:"grano" },
+      { id:"esquites-mediano", img:"https://i.ibb.co/placeholder/esquites-mediano.jpg", emoji:"🌽", nombre:"Esquites Mediano", desc:"Porción mediana al estilo Veracruz", precios:{ "Amarillo":60, "Natural":55 }, tipo:"grano" },
+      { id:"esquites-grande",  img:"https://i.ibb.co/placeholder/esquites-grande.jpg",  emoji:"🌽", nombre:"Esquites Grande",  desc:"Porción grande al estilo Veracruz",  precios:{ "Amarillo":70, "Natural":65 }, tipo:"grano" },
     ],
   },
   antojitos: {
     label: "Antojitos", emoji: "🌮",
     items: [
-      { id:"elote",              emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
-      { id:"chicharron-preparado", emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
-      { id:"tosticrazy",         emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
-      { id:"tosticrazy-xl",      emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
-      { id:"sopa-preparada",     emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":85, "Amarillo":90 }, tipo:"grano" },
-      { id:"marranada",          emoji:"🐷", nombre:"Marranada",          desc:"Antojito especial de la casa",                                precios:{ "Regular":70 } },
+      { id:"elote",               img:"https://i.ibb.co/placeholder/elote.jpg",               emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
+      { id:"chicharron-preparado",img:"https://i.ibb.co/placeholder/chicharron-preparado.jpg",emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
+      { id:"tosticrazy",          img:"https://i.ibb.co/placeholder/tosticrazy.jpg",          emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
+      { id:"tosticrazy-xl",       img:"https://i.ibb.co/placeholder/tosticrazy-xl.jpg",       emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
+      { id:"sopa-preparada",      img:"https://i.ibb.co/placeholder/sopa-preparada.jpg",      emoji:"🍲", nombre:"Sopa Preparada",     desc:"Sopa preparada al estilo Veracruz",                         precios:{ "Natural":85, "Amarillo":90 }, tipo:"grano" },
+      { id:"marranada",           img:"https://i.ibb.co/placeholder/marranada.jpg",           emoji:"🐷", nombre:"Marranada",          desc:"Antojito especial de la casa",                                precios:{ "Regular":70 } },
     ],
   },
   fresas: {
     label: "Fresas con Crema", emoji: "🍓",
     items: [
-      { id:"fresas-chica",   emoji:"🍓", nombre:"Fresas con Crema Chica",   desc:"Fresas frescas con crema, tamaño chico",   precios:{ "Chica":45 } },
-      { id:"fresas-mediana", emoji:"🍓", nombre:"Fresas con Crema Mediana", desc:"Fresas frescas con crema, tamaño mediano", precios:{ "Mediana":90 } },
-      { id:"fresas-grande",  emoji:"🍓", nombre:"Fresas con Crema Grande",  desc:"Fresas frescas con crema, tamaño grande",  precios:{ "Grande":170 } },
+      { id:"fresas-chica",   img:"https://i.ibb.co/placeholder/fresas-chica.jpg",   emoji:"🍓", nombre:"Fresas con Crema Chica",   desc:"Fresas frescas con crema, tamaño chico",   precios:{ "Chica":45 } },
+      { id:"fresas-mediana", img:"https://i.ibb.co/placeholder/fresas-mediana.jpg", emoji:"🍓", nombre:"Fresas con Crema Mediana", desc:"Fresas frescas con crema, tamaño mediano", precios:{ "Mediana":90 } },
+      { id:"fresas-grande",  img:"https://i.ibb.co/placeholder/fresas-grande.jpg",  emoji:"🍓", nombre:"Fresas con Crema Grande",  desc:"Fresas frescas con crema, tamaño grande",  precios:{ "Grande":170 } },
     ],
   },
   dubai: {
     label: "Fresas Dubai", emoji: "✨",
     items: [
-      { id:"dubai", emoji:"✨", nombre:"Fresas Dubai", desc:"Fresas con crema estilo Dubai", precios:{ "Chica":95, "Mediana":190, "Grande":370 }, tipo:"especial" },
+      { id:"dubai", img:"https://i.ibb.co/placeholder/dubai.jpg", emoji:"✨", nombre:"Fresas Dubai", desc:"Fresas con crema estilo Dubai", precios:{ "Chica":95, "Mediana":190, "Grande":370 }, tipo:"especial" },
     ],
   },
   lotus: {
     label: "Fresas Lotus", emoji: "🌸",
     items: [
-      { id:"lotus", emoji:"🌸", nombre:"Fresas Lotus", desc:"Fresas con crema estilo Lotus", precios:{ "Chica":70, "Mediana":120, "Grande":205 }, tipo:"especial" },
+      { id:"lotus", img:"https://i.ibb.co/placeholder/lotus.jpg", emoji:"🌸", nombre:"Fresas Lotus", desc:"Fresas con crema estilo Lotus", precios:{ "Chica":70, "Mediana":120, "Grande":205 }, tipo:"especial" },
     ],
   },
   bebidas: {
     label: "Bebidas", emoji: "🥤",
     items: [
-      { id:"coca-original",   emoji:"🥤", nombre:"Coca Cola Original", desc:"Refresco Coca Cola 600ml",     precios:{ "600ml":35 } },
-      { id:"sprite",          emoji:"🥤", nombre:"Sprite",             desc:"Refresco Sprite 600ml",         precios:{ "600ml":35 } },
-      { id:"fresca",          emoji:"🥤", nombre:"Fresca",             desc:"Refresco Fresca 600ml",         precios:{ "600ml":35 } },
-      { id:"coca-sin-azucar", emoji:"🥤", nombre:"Coca Sin Azúcar",    desc:"Coca Cola sin azúcar 355ml",   precios:{ "355ml":25 } },
-      { id:"arizona",         emoji:"🍵", nombre:"Arizona",            desc:"Té Arizona 570ml — elige tu sabor favorito", precios:{ "570ml":35 }, tipo:"arizona" },
+      { id:"coca-original",   img:"https://i.ibb.co/placeholder/coca-original.jpg",   emoji:"🥤", nombre:"Coca Cola Original", desc:"Refresco Coca Cola 600ml",     precios:{ "600ml":35 } },
+      { id:"sprite",          img:"https://i.ibb.co/placeholder/sprite.jpg",          emoji:"🥤", nombre:"Sprite",             desc:"Refresco Sprite 600ml",         precios:{ "600ml":35 } },
+      { id:"fresca",          img:"https://i.ibb.co/placeholder/fresca.jpg",          emoji:"🥤", nombre:"Fresca",             desc:"Refresco Fresca 600ml",         precios:{ "600ml":35 } },
+      { id:"coca-sin-azucar", img:"https://i.ibb.co/placeholder/coca-sin-azucar.jpg", emoji:"🥤", nombre:"Coca Sin Azúcar",    desc:"Coca Cola sin azúcar 355ml",   precios:{ "355ml":25 } },
+      { id:"arizona",         img:"https://i.ibb.co/placeholder/arizona.jpg",         emoji:"🍵", nombre:"Arizona",            desc:"Té Arizona 570ml — elige tu sabor favorito", precios:{ "570ml":35 }, tipo:"arizona" },
     ],
   },
 };
@@ -357,11 +357,11 @@ function ProductoCard({ item, onAdd, carritoItems }) {
     const tamanoLabel = esGrano
       ? `Grano ${tam}${conTocino ? " · Con tocino" : ""}`
       : tam;
-    onAdd({ id:item.id, nombre:item.nombre, tamano:tamanoLabel, precio:precioActual, emoji:item.emoji });
+    onAdd({ id:item.id, nombre:item.nombre, tamano:tamanoLabel, precio:precioActual, emoji:item.emoji, img:item.img });
     setFlash(true); setTimeout(()=>setFlash(false),900);
   };
   const handleToppingConfirm = ({ toppingDesc, precioFinal }) => {
-    onAdd({ id:item.id, nombre:item.nombre, tamano:tam, precio:precioFinal, emoji:item.emoji, toppings:toppingDesc });
+    onAdd({ id:item.id, nombre:item.nombre, tamano:tam, precio:precioFinal, emoji:item.emoji, img:item.img, toppings:toppingDesc });
     setShowModal(false);
     setFlash(true); setTimeout(()=>setFlash(false),900);
   };
@@ -378,7 +378,12 @@ function ProductoCard({ item, onAdd, carritoItems }) {
         <ArizonaModal item={item} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
       )}
       <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:"16px", display:"flex", alignItems:"center", gap:14 }}>
-        <div style={{ width:68, height:68, borderRadius:14, background:pill, display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, flexShrink:0 }}>{item.emoji}</div>
+        <div style={{ width:72, height:72, borderRadius:14, background:pill, flexShrink:0, overflow:"hidden", position:"relative" }}>
+          {item.img
+            ? <img src={item.img} alt={item.nombre} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} onError={e=>{ e.currentTarget.style.display="none"; e.currentTarget.parentNode.querySelector("span").style.display="flex"; }} />
+            : null}
+          <span style={{ fontSize:36, display: item.img ? "none" : "flex", alignItems:"center", justifyContent:"center", width:"100%", height:"100%", position:"absolute", inset:0 }}>{item.emoji}</span>
+        </div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, color:text, marginBottom:2 }}>{item.nombre}</div>
           <p style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted, margin:"0 0 8px", lineHeight:1.4 }}>{item.desc}</p>
@@ -474,7 +479,9 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
         <span style={s.label}>Tu pedido</span>
         {carrito.map(i=>(
           <div key={carritoLineKey(i)} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-            <div style={{ width:44, height:44, borderRadius:8, background:pill, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 }}>{i.emoji}</div>
+            <div style={{ width:44, height:44, borderRadius:8, background:pill, flexShrink:0, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {i.img ? <img src={i.img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} onError={e=>{ e.currentTarget.style.display="none"; }} /> : <span style={{ fontSize:24 }}>{i.emoji}</span>}
+            </div>
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:"system-ui,sans-serif", fontSize:14, fontWeight:600, color:text }}>{i.nombre}</div>
               <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted }}>{i.tamano}{i.toppings?` · ${i.toppings}`:""}</div>
@@ -620,7 +627,9 @@ function Confirmacion({ folio, nombre, entrega, carrito, onNuevoPedido }) {
         <div style={{ borderTop:`1px dashed ${border}`, paddingTop:16 }}>
           {carrito.map(i=>(
             <div key={carritoLineKey(i)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, fontFamily:"system-ui,sans-serif" }}>
-              <span style={{ fontSize:24, marginRight:8 }}>{i.emoji}</span>
+              <div style={{ width:32, height:32, borderRadius:6, background:pill, flexShrink:0, overflow:"hidden", marginRight:8, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                {i.img ? <img src={i.img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{ e.currentTarget.style.display="none"; }} /> : <span style={{ fontSize:18 }}>{i.emoji}</span>}
+              </div>
               <span style={{ flex:1, fontSize:14, color:text }}>{i.cantidad}× {i.nombre} <span style={{ color:muted, fontSize:12 }}>({i.tamano}{i.toppings?` · ${i.toppings}`:""})</span></span>
               <span style={{ fontSize:14, fontWeight:700, color:accent }}>${(i.precio*i.cantidad).toFixed(0)}</span>
             </div>
@@ -683,7 +692,9 @@ function HeaderCarrito({ carrito, abierto }) {
           <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
             {carrito.map(i => (
               <div key={carritoLineKey(i)} style={{ display:"flex", alignItems:"center", gap:8, fontFamily:"system-ui,sans-serif" }}>
-                <span style={{ fontSize:16 }}>{i.emoji}</span>
+                <div style={{ width:24, height:24, borderRadius:6, background:pill, flexShrink:0, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {i.img ? <img src={i.img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{ e.currentTarget.style.display="none"; }} /> : <span style={{ fontSize:14 }}>{i.emoji}</span>}
+                </div>
                 <span style={{ flex:1, fontSize:13, color:text, fontWeight:500 }}>
                   {i.cantidad}× {i.nombre}
                   <span style={{ color:muted, fontWeight:400 }}> ({i.tamano}{i.toppings ? ` · ${i.toppings}` : ""})</span>
@@ -729,9 +740,9 @@ export default function App() {
       .catch(()=>setAbierto(null));
   },[]);
 
-  const agregar = ({ id, nombre, tamano, precio, emoji, toppings }) => {
+  const agregar = ({ id, nombre, tamano, precio, emoji, img, toppings }) => {
     setCarrito(prev => {
-      const item = { id, nombre, tamano, precio, emoji, toppings };
+      const item = { id, nombre, tamano, precio, emoji, img, toppings };
       if (toppings) {
         return [...prev, { ...item, cantidad: 1, uid: `line-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` }];
       }
