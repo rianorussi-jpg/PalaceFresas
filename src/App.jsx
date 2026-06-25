@@ -51,7 +51,7 @@ const MENU = {
   fresas: {
     label: "Fresas con Crema", emoji: "🍓",
     items: [
-      { id:"fresas-chica",   img:"https://i.ibb.co/placeholder/fresas-chica.jpg",   emoji:"🍓", nombre:"Fresas con Crema Chica",   desc:"Fresas frescas con crema, tamaño chico",   precios:{ "Chica":45 } },
+      { id:"fresas-chica",   img:"https://i.ibb.co/ksgdWXQ1/PHOTO-2026-06-23-21-30-15-5.jpg",   emoji:"🍓", nombre:"Fresas con Crema Chica",   desc:"Fresas frescas con crema, tamaño chico",   precios:{ "Chica":45 } },
       { id:"fresas-mediana", img:"https://i.ibb.co/placeholder/fresas-mediana.jpg", emoji:"🍓", nombre:"Fresas con Crema Mediana", desc:"Fresas frescas con crema, tamaño mediano", precios:{ "Mediana":90 } },
       { id:"fresas-grande",  img:"https://i.ibb.co/placeholder/fresas-grande.jpg",  emoji:"🍓", nombre:"Fresas con Crema Grande",  desc:"Fresas frescas con crema, tamaño grande",  precios:{ "Grande":170 } },
     ],
@@ -59,13 +59,13 @@ const MENU = {
   dubai: {
     label: "Fresas Dubai", emoji: "✨",
     items: [
-      { id:"dubai", img:"https://i.ibb.co/placeholder/dubai.jpg", emoji:"✨", nombre:"Fresas Dubai", desc:"Fresas con crema estilo Dubai", precios:{ "Chica":95, "Mediana":190, "Grande":370 }, tipo:"especial" },
+      { id:"dubai", img:"https://i.ibb.co/kgwzvHnY/PHOTO-2026-06-23-21-30-15-3.jpg", emoji:"✨", nombre:"Fresas Dubai", desc:"Fresas con crema estilo Dubai", precios:{ "Chica":95, "Mediana":190, "Grande":370 }, tipo:"especial" },
     ],
   },
   lotus: {
     label: "Fresas Lotus", emoji: "🌸",
     items: [
-      { id:"lotus", img:"https://i.ibb.co/placeholder/lotus.jpg", emoji:"🌸", nombre:"Fresas Lotus", desc:"Fresas con crema estilo Lotus", precios:{ "Chica":70, "Mediana":120, "Grande":205 }, tipo:"especial" },
+      { id:"lotus", img:"https://i.ibb.co/jPdTJ6yL/PHOTO-2026-06-23-21-30-14-2.jpg", emoji:"🌸", nombre:"Fresas Lotus", desc:"Fresas con crema estilo Lotus", precios:{ "Chica":70, "Mediana":120, "Grande":205 }, tipo:"especial" },
     ],
   },
   bebidas: {
