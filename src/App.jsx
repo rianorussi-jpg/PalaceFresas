@@ -574,6 +574,25 @@ function Confirmacion({ folio, nombre, entrega, carrito, onNuevoPedido }) {
   );
 }
 
+function CartiBadge({ carrito }) {
+  const totalItems = carrito.reduce((s, i) => s + i.cantidad, 0);
+  const totalPrecio = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  if (totalItems === 0) return null;
+  return (
+    <div style={{ background:accent, borderRadius:20, padding:"6px 13px", display:"flex", alignItems:"center", gap:8, boxShadow:`0 2px 8px ${accent}55` }}>
+      <span style={{ fontSize:16 }}>🛒</span>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", lineHeight:1.2 }}>
+        <span style={{ fontFamily:"system-ui,sans-serif", fontSize:12, fontWeight:700, color:"#fff" }}>
+          {totalItems} {totalItems === 1 ? "producto" : "productos"}
+        </span>
+        <span style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:"rgba(255,255,255,0.85)", fontWeight:500 }}>
+          ${totalPrecio.toFixed(0)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [paso,setPaso]                 = useState(1);
   const [carrito,setCarrito]           = useState([]);
@@ -628,12 +647,15 @@ export default function App() {
             <div style={{ fontSize:12, color:muted }}>Entrega y recolección · Veracruz</div>
           </div>
         </div>
-        {abierto!==null&&(
-          <div style={{ background:abierto?"#1a0020":"#1a1a1a", border:`1.5px solid ${abierto?accent:"#555"}`, borderRadius:20, padding:"6px 14px", fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:"#fcfcfc", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2, lineHeight:1.2 }}>
-            <span style={{ display:"flex", alignItems:"center", gap:5 }}><span>{abierto?"⚡":"🌙"}</span>{abierto?"Abierto ahora":"Cerrado"}</span>
-            {!abierto&&<span style={{ fontSize:10, fontWeight:500, color:"#bbb" }}>Volvemos a las 16:00</span>}
-          </div>
-        )}
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <CartiBadge carrito={carrito} />
+          {abierto!==null&&(
+            <div style={{ background:abierto?"#1a0020":"#1a1a1a", border:`1.5px solid ${abierto?accent:"#555"}`, borderRadius:20, padding:"6px 14px", fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:"#fcfcfc", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2, lineHeight:1.2 }}>
+              <span style={{ display:"flex", alignItems:"center", gap:5 }}><span>{abierto?"⚡":"🌙"}</span>{abierto?"Abierto ahora":"Cerrado"}</span>
+              {!abierto&&<span style={{ fontSize:10, fontWeight:500, color:"#bbb" }}>Volvemos a las 16:00</span>}
+            </div>
+          )}
+        </div>
       </div>
       <div style={{ background:cardHi, borderBottom:`1px solid ${border}`, padding:"10px 20px", display:"flex", alignItems:"center", gap:8 }}>
         <span style={{ fontSize:14 }}>📍</span>
