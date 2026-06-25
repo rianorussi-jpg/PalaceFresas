@@ -599,13 +599,13 @@ function HeaderCarrito({ carrito, abierto }) {
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          {tieneItems && (
+          {tieneItems && !abiertoCarro && (
             <button
-              onClick={() => setAbiertoCarro(v => !v)}
+              onClick={() => setAbiertoCarro(true)}
               style={{ background:pill, border:`1.5px solid ${border}`, borderRadius:20, padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:accent }}
             >
-              <span style={{ transition:"transform 0.2s", display:"inline-block", transform: abiertoCarro ? "rotate(0deg)" : "rotate(180deg)" }}>▲</span>
-              <span>{abiertoCarro ? "Ocultar" : `🛒 $${total.toFixed(0)}`}</span>
+              <span style={{ display:"inline-block", transform:"rotate(180deg)" }}>▲</span>
+              <span>🛒 ${total.toFixed(0)}</span>
             </button>
           )}
           {abierto!==null&&(
@@ -630,7 +630,14 @@ function HeaderCarrito({ carrito, abierto }) {
               </div>
             ))}
           </div>
-          <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8, paddingTop:8, borderTop:`1px dashed ${border}` }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8, paddingTop:8, borderTop:`1px dashed ${border}` }}>
+            <button
+              onClick={() => setAbiertoCarro(false)}
+              style={{ background:pill, border:`1.5px solid ${border}`, borderRadius:20, padding:"5px 11px", cursor:"pointer", display:"flex", alignItems:"center", gap:5, fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:accent }}
+            >
+              <span>▲</span>
+              <span>Ocultar</span>
+            </button>
             <span style={{ fontFamily:"system-ui,sans-serif", fontSize:13, fontWeight:800, color:text }}>
               Total: <span style={{ color:accent }}>${total.toFixed(0)}</span>
             </span>
