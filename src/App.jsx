@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import emailjs from "@emailjs/browser";
 
 const EJS_SERVICE     = "service_gdnezgh";
@@ -575,6 +575,71 @@ function Confirmacion({ folio, nombre, entrega, carrito, onNuevoPedido }) {
 }
 
 
+function HeaderCarrito({ carrito, abierto }) {
+  const [abiertoCarro, setAbiertoCarro] = useState(true);
+
+  // Auto-expandir cuando se agrega el primer item
+  const prevLen = useRef(0);
+  useEffect(() => {
+    if (carrito.length > 0 && prevLen.current === 0) setAbiertoCarro(true);
+    prevLen.current = carrito.length;
+  }, [carrito.length]);
+
+  const total = carrito.reduce((s,i) => s + i.precio * i.cantidad, 0);
+  const tieneItems = carrito.length > 0;
+
+  return (
+    <div style={{ borderBottom:`1px solid ${border}`, padding:"16px 20px 0", position:"sticky", top:0, background:bg, zIndex:10 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: tieneItems ? 12 : 16 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:32 }}>🍓</span>
+          <div>
+            <div style={{ fontWeight:800, fontSize:18, lineHeight:1.1 }}>Fresas Palace</div>
+            <div style={{ fontSize:12, color:muted }}>Entrega y recolección · Veracruz</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {tieneItems && (
+            <button
+              onClick={() => setAbiertoCarro(v => !v)}
+              style={{ background:pill, border:`1.5px solid ${border}`, borderRadius:20, padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:accent }}
+            >
+              <span style={{ transition:"transform 0.2s", display:"inline-block", transform: abiertoCarro ? "rotate(0deg)" : "rotate(180deg)" }}>▲</span>
+              <span>{abiertoCarro ? "Ocultar" : `🛒 $${total.toFixed(0)}`}</span>
+            </button>
+          )}
+          {abierto!==null&&(
+            <div style={{ background:abierto?"#1a0020":"#1a1a1a", border:`1.5px solid ${abierto?accent:"#555"}`, borderRadius:20, padding:"6px 14px", fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:"#fcfcfc", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2, lineHeight:1.2 }}>
+              <span style={{ display:"flex", alignItems:"center", gap:5 }}><span>{abierto?"⚡":"🌙"}</span>{abierto?"Abierto ahora":"Cerrado"}</span>
+              {!abierto&&<span style={{ fontSize:10, fontWeight:500, color:"#bbb" }}>Volvemos a las 16:00</span>}
+            </div>
+          )}
+        </div>
+      </div>
+      {tieneItems && abiertoCarro && (
+        <div style={{ borderTop:`1px solid ${border}`, paddingTop:10, paddingBottom:12 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+            {carrito.map(i => (
+              <div key={carritoLineKey(i)} style={{ display:"flex", alignItems:"center", gap:8, fontFamily:"system-ui,sans-serif" }}>
+                <span style={{ fontSize:16 }}>{i.emoji}</span>
+                <span style={{ flex:1, fontSize:13, color:text, fontWeight:500 }}>
+                  {i.cantidad}× {i.nombre}
+                  <span style={{ color:muted, fontWeight:400 }}> ({i.tamano}{i.toppings ? ` · ${i.toppings}` : ""})</span>
+                </span>
+                <span style={{ fontSize:13, fontWeight:700, color:accent }}>${(i.precio * i.cantidad).toFixed(0)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8, paddingTop:8, borderTop:`1px dashed ${border}` }}>
+            <span style={{ fontFamily:"system-ui,sans-serif", fontSize:13, fontWeight:800, color:text }}>
+              Total: <span style={{ color:accent }}>${total.toFixed(0)}</span>
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function App() {
   const [paso,setPaso]                 = useState(1);
@@ -622,44 +687,7 @@ export default function App() {
   return (
     <div style={{ background:bg, minHeight:"100vh", color:text, fontFamily:"system-ui,sans-serif" }}>
       <style>{`* { box-sizing:border-box; } body { margin:0; } input,textarea,select { color-scheme:light; }`}</style>
-      <div style={{ borderBottom:`1px solid ${border}`, padding:"16px 20px 0", position:"sticky", top:0, background:bg, zIndex:10 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: carrito.length > 0 ? 12 : 16 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontSize:32 }}>🍓</span>
-            <div>
-              <div style={{ fontWeight:800, fontSize:18, lineHeight:1.1 }}>Fresas Palace</div>
-              <div style={{ fontSize:12, color:muted }}>Entrega y recolección · Veracruz</div>
-            </div>
-          </div>
-          {abierto!==null&&(
-            <div style={{ background:abierto?"#1a0020":"#1a1a1a", border:`1.5px solid ${abierto?accent:"#555"}`, borderRadius:20, padding:"6px 14px", fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:700, color:"#fcfcfc", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2, lineHeight:1.2 }}>
-              <span style={{ display:"flex", alignItems:"center", gap:5 }}><span>{abierto?"⚡":"🌙"}</span>{abierto?"Abierto ahora":"Cerrado"}</span>
-              {!abierto&&<span style={{ fontSize:10, fontWeight:500, color:"#bbb" }}>Volvemos a las 16:00</span>}
-            </div>
-          )}
-        </div>
-        {carrito.length > 0 && (
-          <div style={{ borderTop:`1px solid ${border}`, paddingTop:10, paddingBottom:12 }}>
-            <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-              {carrito.map(i => (
-                <div key={carritoLineKey(i)} style={{ display:"flex", alignItems:"center", gap:8, fontFamily:"system-ui,sans-serif" }}>
-                  <span style={{ fontSize:16 }}>{i.emoji}</span>
-                  <span style={{ flex:1, fontSize:13, color:text, fontWeight:500 }}>
-                    {i.cantidad}× {i.nombre}
-                    <span style={{ color:muted, fontWeight:400 }}> ({i.tamano}{i.toppings ? ` · ${i.toppings}` : ""})</span>
-                  </span>
-                  <span style={{ fontSize:13, fontWeight:700, color:accent }}>${(i.precio * i.cantidad).toFixed(0)}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8, paddingTop:8, borderTop:`1px dashed ${border}` }}>
-              <span style={{ fontFamily:"system-ui,sans-serif", fontSize:13, fontWeight:800, color:text }}>
-                Total: <span style={{ color:accent }}>${carrito.reduce((s,i) => s + i.precio * i.cantidad, 0).toFixed(0)}</span>
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
+      <HeaderCarrito carrito={carrito} abierto={abierto} />
       <div style={{ background:cardHi, borderBottom:`1px solid ${border}`, padding:"10px 20px", display:"flex", alignItems:"center", gap:8 }}>
         <span style={{ fontSize:14 }}>📍</span>
         <span style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted }}>Zonas: <b style={{ color:text }}>Martí · Colón · Centro · Boca del Río · y más</b></span>
