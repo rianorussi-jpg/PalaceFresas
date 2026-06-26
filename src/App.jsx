@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import emailjs from "@emailjs/browser";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PK || "pk_test_51TliqAACUOsH5hVcm54scW6BB1ckWunpgt7XffvYSEQJev2Gl3enuVUXLUKCjTsj9VwRpvzuA3QOXWVJw7d2vzCm00eG4XZ1lh";
+const stripePromise = loadStripe(STRIPE_PK);
 
 const EJS_SERVICE     = "service_gdnezgh";
 const EJS_TPL_CLIENTE = "template_ko2otxk";
@@ -506,6 +511,64 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
   );
 }
 
+// ── Formulario de tarjeta Stripe (inner, necesita Elements context) ──────────
+function StripeCardForm({ entrega, carrito, datosCliente, onPagoExitoso, onError, enviando, setEnviando }) {
+  const stripe   = useStripe();
+  const elements = useElements();
+
+  const handlePagar = async () => {
+    if (!stripe || !elements) return;
+    setEnviando(true);
+
+    try {
+      // 1. Crear PaymentIntent en el backend
+      const res = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ total: entrega.total }),
+      });
+      const { clientSecret, error: backendError } = await res.json();
+      if (backendError) { onError(backendError); setEnviando(false); return; }
+
+      // 2. Confirmar el pago con la tarjeta del cliente
+      const cardElement = elements.getElement(CardElement);
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: { name: datosCliente.nombre, email: datosCliente.email || undefined },
+        },
+      });
+
+      if (stripeError) { onError(stripeError.message); setEnviando(false); return; }
+      if (paymentIntent.status === "succeeded") { onPagoExitoso(paymentIntent.id); }
+    } catch (e) {
+      onError("Error de conexión. Intenta de nuevo.");
+      setEnviando(false);
+    }
+  };
+
+  const cardStyle = {
+    style: {
+      base: { fontFamily:"system-ui,sans-serif", fontSize:"15px", color:text, "::placeholder":{ color:muted } },
+      invalid: { color: accent },
+    },
+  };
+
+  return (
+    <div>
+      <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"16px" }}>
+        <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:12 }}>Datos de tarjeta</div>
+        <CardElement options={cardStyle} />
+      </div>
+      <div style={{ marginTop:12 }}>
+        <Btn onClick={handlePagar} variant="primary" disabled={enviando||!stripe}>
+          {enviando ? "Procesando pago…" : `Pagar $${entrega.total.toFixed(0)} 💳`}
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
 function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
   const [nombre,setNombre]       = useState("");
   const [telefono,setTelefono]   = useState("");
@@ -519,18 +582,20 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
   const [error,setError]         = useState(null);
   const [enviando,setEnviando]   = useState(false);
 
-  const handleConfirmar = async () => {
-    if (!nombre.trim()||!telefono.trim()) { setError("Falta tu nombre o teléfono."); return; }
-    if (entrega.tipo==="domicilio"&&!direccion.trim()) { setError("Falta la dirección."); return; }
-    if (entrega.tipo==="domicilio"&&!colonia)          { setError("Selecciona tu colonia."); return; }
-    if (entrega.tipo==="domicilio"&&!cp.trim())        { setError("Falta el código postal."); return; }
-    setError(null); setEnviando(true);
+  // Validación de campos antes de cualquier acción
+  const validar = () => {
+    if (!nombre.trim()||!telefono.trim()) { setError("Falta tu nombre o teléfono."); return false; }
+    if (entrega.tipo==="domicilio"&&!direccion.trim()) { setError("Falta la dirección."); return false; }
+    if (entrega.tipo==="domicilio"&&!colonia)          { setError("Selecciona tu colonia."); return false; }
+    if (entrega.tipo==="domicilio"&&!cp.trim())        { setError("Falta el código postal."); return false; }
+    setError(null);
+    return true;
+  };
 
-    const num   = Math.floor(Math.random()*9999)+1;
-    const folio = `#FP:${String(num).padStart(4,"0")}`;
+  const enviarNotificaciones = async ({ folio, pagoId }) => {
     const resumen    = buildResumen(carrito);
     const tipoLabel  = entrega.tipo==="domicilio"?"🛵 A domicilio":"🏪 Recoger en tienda";
-    const pagoLabel  = pago==="efectivo"?"💵 Efectivo":pago==="tarjeta"?"💳 Tarjeta":"📲 Transferencia";
+    const pagoLabel  = pago==="efectivo"?"💵 Efectivo":pago==="tarjeta"?`💳 Tarjeta (Stripe ${pagoId||""})`.trim():"📲 Transferencia";
     const dirCompleta = entrega.tipo==="domicilio" ? `${direccion}${numInt?`, Int. ${numInt}`:""}, ${colonia}, CP ${cp}` : "—";
 
     try {
@@ -570,13 +635,34 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
       `💰 Subtotal: $${entrega.subtotal.toFixed(0)}`,
       `🛵 Envío: ${entrega.envio===0?"Gratis":`$${entrega.envio.toFixed(0)}`}`,
       `✅ <b>TOTAL: $${entrega.total.toFixed(0)}</b>`,
+      pagoId ? `💳 Stripe ID: ${pagoId}` : "",
       notas?`\n📝 Notas: ${notas}`:"",
     ].filter(l=>l!=="").join("\n");
     await sendTelegram(tgMsg);
+  };
 
+  // Flujo efectivo / transferencia
+  const handleConfirmar = async () => {
+    if (!validar()) return;
+    setEnviando(true);
+    const num   = Math.floor(Math.random()*9999)+1;
+    const folio = `#FP:${String(num).padStart(4,"0")}`;
+    await enviarNotificaciones({ folio, pagoId: null });
     setEnviando(false);
     onConfirmar({ folio, nombre, telefono, email, direccion, numInt, colonia, cp, pago, notas });
   };
+
+  // Callback cuando Stripe confirma el pago exitosamente
+  const handlePagoStripeExitoso = async (pagoId) => {
+    const num   = Math.floor(Math.random()*9999)+1;
+    const folio = `#FP:${String(num).padStart(4,"0")}`;
+    await enviarNotificaciones({ folio, pagoId });
+    setEnviando(false);
+    onConfirmar({ folio, nombre, telefono, email, direccion, numInt, colonia, cp, pago, notas });
+  };
+
+  const mostrarStripe = pago === "tarjeta";
+  const datosCliente  = { nombre, email };
 
   return (
     <div>
@@ -593,7 +679,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
           <span style={s.label}>Forma de pago</span>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
             {[["efectivo","💵","Efectivo"],["tarjeta","💳","Tarjeta"],["transferencia","📲","Transferencia"]].map(([v,emoji,lbl])=>(
-              <div key={v} onClick={()=>setPago(v)} style={{ background:pago===v?accent+"22":card, border:`1.5px solid ${pago===v?accent:border}`, borderRadius:14, padding:"14px 8px", textAlign:"center", cursor:"pointer" }}>
+              <div key={v} onClick={()=>{ if (!enviando) setPago(v); }} style={{ background:pago===v?accent+"22":card, border:`1.5px solid ${pago===v?accent:border}`, borderRadius:14, padding:"14px 8px", textAlign:"center", cursor:enviando?"default":"pointer" }}>
                 <div style={{ fontSize:22, marginBottom:4 }}>{emoji}</div>
                 <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, fontWeight:600, color:pago===v?accent:muted }}>{lbl}</div>
               </div>
@@ -606,7 +692,23 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
           <div style={{ display:"flex", justifyContent:"space-between", fontFamily:"system-ui,sans-serif", fontSize:16, fontWeight:800, color:text }}><span>Total</span><span style={{ color:accent }}>${entrega.total.toFixed(0)}</span></div>
         </div>
         {error&&<div style={{ background:accent+"18", border:`1px solid ${accent}55`, borderRadius:12, padding:"12px 16px", fontFamily:"system-ui,sans-serif", fontSize:13, color:accent }}>{error}</div>}
-        <Btn onClick={handleConfirmar} variant="primary" disabled={enviando}>{enviando?"Enviando pedido…":"Confirmar pedido 🍓"}</Btn>
+
+        {/* Stripe card form — solo aparece cuando eligen Tarjeta */}
+        {mostrarStripe ? (
+          <Elements stripe={stripePromise}>
+            <StripeCardForm
+              entrega={entrega}
+              carrito={carrito}
+              datosCliente={datosCliente}
+              onPagoExitoso={handlePagoStripeExitoso}
+              onError={(msg) => { setError(msg); setEnviando(false); }}
+              enviando={enviando}
+              setEnviando={setEnviando}
+            />
+          </Elements>
+        ) : (
+          <Btn onClick={handleConfirmar} variant="primary" disabled={enviando}>{enviando?"Enviando pedido…":"Confirmar pedido 🍓"}</Btn>
+        )}
         <div style={{ textAlign:"center" }}><Btn onClick={onBack} variant="ghost" disabled={enviando}>← Volver</Btn></div>
       </div>
     </div>
