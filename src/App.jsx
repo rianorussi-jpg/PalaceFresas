@@ -500,6 +500,7 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
   const [predicciones, setPredicciones]           = useState([]);
   const [mostrarPredicciones, setMostrarPredicciones] = useState(false);
   const [buscandoPred, setBuscandoPred]           = useState(false);
+  const [errorPred, setErrorPred]                 = useState(null);
 
   const mapsLoaded = useGoogleMapsLoader();
   const direccionInputRef       = useRef(null);
@@ -520,8 +521,14 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
 
   // Busca predicciones de dirección (debounced) mientras el usuario escribe
   useEffect(() => {
-    if (tipo !== "domicilio" || !autocompleteServiceRef.current || direccion.trim().length < 4) {
+    if (tipo !== "domicilio" || direccion.trim().length < 4) {
       setPredicciones([]);
+      setBuscandoPred(false);
+      return;
+    }
+    if (!autocompleteServiceRef.current) {
+      // Google Maps aún no cargó o la librería "places" no está disponible
+      setBuscandoPred(false);
       return;
     }
     setBuscandoPred(true);
@@ -533,14 +540,17 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
           if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
             setPredicciones(results);
             setMostrarPredicciones(true);
+            setErrorPred(null);
           } else {
             setPredicciones([]);
+            console.error("Google Places predicciones — status:", status);
+            setErrorPred(status);
           }
         }
       );
     }, 350);
     return () => clearTimeout(timer);
-  }, [direccion, tipo]);
+  }, [direccion, tipo, mapsLoaded]);
 
   const seleccionarPrediccion = (pred) => {
     setMostrarPredicciones(false);
@@ -663,6 +673,11 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
             )}
             {buscandoPred && (
               <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, marginTop:4 }}>Buscando direcciones…</div>
+            )}
+            {!buscandoPred && errorPred && (
+              <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:accent, marginTop:4 }}>
+                No se pudieron buscar direcciones ({errorPred}). Puedes escribir la dirección completa manualmente y llenar Colonia/CP a mano.
+              </div>
             )}
           </div>
           <div>{/* div oculto requerido por PlacesService, no necesita ningún estilo visible */}
