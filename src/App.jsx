@@ -31,7 +31,7 @@ function useGoogleMapsLoader() {
     }
     const script = document.createElement("script");
     script.id = "gmaps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places`;
     script.async = true;
     script.onload = () => setLoaded(true);
     script.onerror = () => console.error("No se pudo cargar Google Maps JS API");
@@ -489,19 +489,47 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
   const [hora, setHora] = useState(slots[0]);
 
   const [direccion, setDireccion] = useState("");
+  const [referencias, setReferencias] = useState("");
   const [colonia, setColonia]     = useState("");
   const [cp, setCp]               = useState("");
   const [distanciaKm, setDistanciaKm]     = useState(null);
   const [calculando, setCalculando]       = useState(false);
   const [errorDistancia, setErrorDistancia] = useState(false);
+  const [destinoCoords, setDestinoCoords] = useState(null); // {lat,lng} si viene de autocomplete (más preciso)
 
   const mapsLoaded = useGoogleMapsLoader();
+  const direccionInputRef = useRef(null);
+  const autocompleteRef   = useRef(null);
+
+  // Inicializa el autocompletado de direcciones (Google Places) una sola vez
+  useEffect(() => {
+    if (!mapsLoaded || !window.google?.maps?.places || !direccionInputRef.current || autocompleteRef.current) return;
+    const autocomplete = new window.google.maps.places.Autocomplete(direccionInputRef.current, {
+      componentRestrictions: { country: "mx" },
+      fields: ["address_components", "formatted_address", "geometry"],
+      types: ["address"],
+    });
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (!place?.geometry) return;
+      const comps = place.address_components || [];
+      const parte = (type) => comps.find(c => c.types.includes(type))?.long_name || "";
+      const calleNum = [parte("route"), parte("street_number")].filter(Boolean).join(" ");
+      const col = parte("sublocality") || parte("neighborhood") || parte("locality") || "";
+      const codigoPostal = parte("postal_code") || "";
+      setDireccion(calleNum || place.formatted_address || "");
+      if (col) setColonia(col);
+      if (codigoPostal) setCp(codigoPostal);
+      setDestinoCoords({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
+    });
+    autocompleteRef.current = autocomplete;
+  }, [mapsLoaded]);
 
   useEffect(() => {
     if (!slots.includes(hora)) setHora(slots[0]);
   }, [slots, hora]);
 
-  // Calcula la distancia (debounced) cuando cambia dirección/colonia/cp
+  // Calcula la distancia (debounced) cuando cambia dirección/colonia/cp/coords
   useEffect(() => {
     if (tipo !== "domicilio") { setDistanciaKm(null); setErrorDistancia(false); return; }
     if (direccion.trim().length < 5 || colonia.trim().length < 2) { setDistanciaKm(null); setErrorDistancia(false); return; }
@@ -510,7 +538,11 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
     setCalculando(true);
     setErrorDistancia(false);
     const timer = setTimeout(() => {
-      const destino = `${direccion}, ${colonia}, ${cp ? `CP ${cp}, ` : ""}Veracruz, Ver., México`;
+      // Si la dirección vino de una sugerencia de Google Places, usamos las coordenadas
+      // exactas (más precisas). Si el usuario escribió/editó a mano, buscamos por texto.
+      const destino = destinoCoords
+        ? new window.google.maps.LatLng(destinoCoords.lat, destinoCoords.lng)
+        : `${direccion}, ${colonia}, ${cp ? `CP ${cp}, ` : ""}Veracruz, Ver., México`;
       const service = new window.google.maps.DistanceMatrixService();
       service.getDistanceMatrix(
         {
@@ -533,7 +565,7 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
       );
     }, 900);
     return () => clearTimeout(timer);
-  }, [direccion, colonia, cp, tipo, mapsLoaded]);
+  }, [direccion, colonia, cp, tipo, mapsLoaded, destinoCoords]);
 
   const subtotal = carrito.reduce((s,i)=>s+i.precio*i.cantidad,0);
   const envio =
@@ -564,16 +596,27 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
         <div style={{ marginBottom:20, display:"flex", flexDirection:"column", gap:12 }}>
           <div>
             <span style={s.label}>Dirección</span>
-            <textarea value={direccion} onChange={e=>setDireccion(e.target.value)} placeholder="Calle, número y referencias" rows={2} style={{ ...s.input, resize:"vertical" }} />
+            <input
+              ref={direccionInputRef}
+              value={direccion}
+              onChange={e=>{ setDireccion(e.target.value); setDestinoCoords(null); }}
+              placeholder="Empieza a escribir tu calle y número…"
+              autoComplete="off"
+              style={s.input}
+            />
+          </div>
+          <div>
+            <span style={s.label}>Referencias <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span>
+            <textarea value={referencias} onChange={e=>setReferencias(e.target.value)} placeholder="Portón negro, casa azul, entre calles…" rows={2} style={{ ...s.input, resize:"vertical" }} />
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:10 }}>
             <div>
               <span style={s.label}>Colonia</span>
-              <input value={colonia} onChange={e=>setColonia(e.target.value)} placeholder="Ej: Reforma" style={s.input} />
+              <input value={colonia} onChange={e=>{ setColonia(e.target.value); setDestinoCoords(null); }} placeholder="Ej: Reforma" style={s.input} />
             </div>
             <div>
               <span style={s.label}>Código postal</span>
-              <input value={cp} onChange={e=>setCp(e.target.value)} placeholder="91700" type="tel" maxLength={5} style={s.input} />
+              <input value={cp} onChange={e=>{ setCp(e.target.value); setDestinoCoords(null); }} placeholder="91700" type="tel" maxLength={5} style={s.input} />
             </div>
           </div>
           {direccionCompleta && (
@@ -620,7 +663,7 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
           <div style={{ display:"flex", justifyContent:"space-between", fontFamily:"system-ui,sans-serif", fontSize:17, fontWeight:800, color:text, marginTop:8 }}><span>Total</span><span style={{ color:accent }}>${total.toFixed(0)}</span></div>
         </div>
       </div>
-      <Btn onClick={()=>onNext({tipo,hora,subtotal,envio:envio??0,total,direccion,colonia,cp,distanciaKm})} variant="primary" disabled={!puedeContinuar}>
+      <Btn onClick={()=>onNext({tipo,hora,subtotal,envio:envio??0,total,direccion,referencias,colonia,cp,distanciaKm})} variant="primary" disabled={!puedeContinuar}>
         {tipo==="domicilio" && !direccionCompleta ? "Completa tu dirección" : calculando ? "Calculando envío…" : "Continuar →"}
       </Btn>
       <div style={{ textAlign:"center", marginTop:10 }}><Btn onClick={onBack} variant="ghost">← Volver al menú</Btn></div>
@@ -696,10 +739,11 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
   const [error,setError]         = useState(null);
   const [enviando,setEnviando]   = useState(false);
 
-  // La dirección, colonia y CP ya se capturaron en el paso de Entrega
-  const direccion = entrega.direccion || "";
-  const colonia   = entrega.colonia || "";
-  const cp        = entrega.cp || "";
+  // La dirección, colonia, CP y referencias ya se capturaron en el paso de Entrega
+  const direccion   = entrega.direccion || "";
+  const referencias = entrega.referencias || "";
+  const colonia     = entrega.colonia || "";
+  const cp          = entrega.cp || "";
 
   // Validación de campos antes de cualquier acción
   const validar = () => {
@@ -712,7 +756,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
     const resumen    = buildResumen(carrito);
     const tipoLabel  = entrega.tipo==="domicilio"?"🛵 A domicilio":"🏪 Recoger en tienda";
     const pagoLabel  = pago==="efectivo"?"💵 Efectivo":pago==="tarjeta"?`💳 Tarjeta (Stripe ${pagoId||""})`.trim():"📲 Transferencia";
-    const dirCompleta = entrega.tipo==="domicilio" ? `${direccion}${numInt?`, Int. ${numInt}`:""}, ${colonia}, CP ${cp}` : "—";
+    const dirCompleta = entrega.tipo==="domicilio" ? `${direccion}${numInt?`, Int. ${numInt}`:""}, ${colonia}, CP ${cp}${referencias?` — Ref: ${referencias}`:""}` : "—";
 
     try {
       emailjs.init(EJS_PUBLIC);
@@ -791,6 +835,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
           <div style={{ background:cardHi, border:`1.5px solid ${border}`, borderRadius:14, padding:"12px 16px" }}>
             <span style={s.label}>Entregar en</span>
             <div style={{ fontFamily:"system-ui,sans-serif", fontSize:13, color:text }}>{direccion}, {colonia}, CP {cp}</div>
+            {referencias && <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted, marginTop:4 }}>Ref: {referencias}</div>}
           </div>
         )}
         {entrega.tipo==="domicilio"&&<div><span style={s.label}>Número interior <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span><input value={numInt} onChange={e=>setNumInt(e.target.value)} placeholder='Ej: "102A"' style={s.input} /></div>}
