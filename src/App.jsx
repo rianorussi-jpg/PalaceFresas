@@ -500,6 +500,9 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
   const mapsLoaded = useGoogleMapsLoader();
   const direccionInputRef = useRef(null);
   const autocompleteRef   = useRef(null);
+  // Valor "engañoso" para autocomplete: Chrome ignora autoComplete="off" en campos
+  // que reconoce como dirección/contacto, así que le damos un token que no reconozca.
+  const noAutofillToken = useRef(`no-autofill-${Math.random().toString(36).slice(2)}`).current;
 
   // Inicializa el autocompletado de direcciones (Google Places) una sola vez
   useEffect(() => {
@@ -601,7 +604,10 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
               value={direccion}
               onChange={e=>{ setDireccion(e.target.value); setDestinoCoords(null); }}
               placeholder="Empieza a escribir tu calle y número…"
-              autoComplete="off"
+              name={noAutofillToken}
+              autoComplete={noAutofillToken}
+              role="presentation"
+              spellCheck="false"
               style={s.input}
             />
           </div>
@@ -612,11 +618,11 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
           <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:10 }}>
             <div>
               <span style={s.label}>Colonia</span>
-              <input value={colonia} onChange={e=>{ setColonia(e.target.value); setDestinoCoords(null); }} placeholder="Ej: Reforma" style={s.input} />
+              <input value={colonia} onChange={e=>{ setColonia(e.target.value); setDestinoCoords(null); }} placeholder="Ej: Reforma" name={`${noAutofillToken}-col`} autoComplete={`${noAutofillToken}-col`} style={s.input} />
             </div>
             <div>
               <span style={s.label}>Código postal</span>
-              <input value={cp} onChange={e=>{ setCp(e.target.value); setDestinoCoords(null); }} placeholder="91700" type="tel" maxLength={5} style={s.input} />
+              <input value={cp} onChange={e=>{ setCp(e.target.value); setDestinoCoords(null); }} placeholder="91700" type="tel" maxLength={5} name={`${noAutofillToken}-cp`} autoComplete={`${noAutofillToken}-cp`} style={s.input} />
             </div>
           </div>
           {direccionCompleta && (
@@ -1032,7 +1038,24 @@ export default function App() {
 
   return (
     <div style={{ background:bg, minHeight:"100vh", color:text, fontFamily:"system-ui,sans-serif" }}>
-      <style>{`* { box-sizing:border-box; } body { margin:0; } input,textarea,select { color-scheme:light; }`}</style>
+      <style>{`
+        * { box-sizing:border-box; }
+        body { margin:0; }
+        input,textarea,select { color-scheme:light; }
+        .pac-container {
+          z-index: 9999 !important;
+          border-radius: 14px !important;
+          border: 1.5px solid ${border} !important;
+          margin-top: 4px !important;
+          font-family: system-ui, sans-serif !important;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+        }
+        .pac-item { padding: 8px 12px !important; font-size: 13px !important; cursor: pointer !important; }
+        .pac-item:hover { background: ${cardHi} !important; }
+        .pac-item-query { font-size: 13px !important; color: ${text} !important; }
+        .pac-icon { display: none !important; }
+        .pac-matched { font-weight: 700 !important; }
+      `}</style>
       <HeaderCarrito carrito={carrito} abierto={abierto} />
       <div style={{ background:cardHi, borderBottom:`1px solid ${border}`, padding:"10px 20px", display:"flex", alignItems:"center", gap:8 }}>
         <span style={{ fontSize:14 }}>📍</span>
