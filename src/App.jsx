@@ -497,36 +497,72 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
   const [errorDistancia, setErrorDistancia] = useState(false);
   const [destinoCoords, setDestinoCoords] = useState(null); // {lat,lng} si viene de autocomplete (más preciso)
 
+  const [predicciones, setPredicciones]           = useState([]);
+  const [mostrarPredicciones, setMostrarPredicciones] = useState(false);
+  const [buscandoPred, setBuscandoPred]           = useState(false);
+
   const mapsLoaded = useGoogleMapsLoader();
-  const direccionInputRef = useRef(null);
-  const autocompleteRef   = useRef(null);
-  // Valor "engañoso" para autocomplete: Chrome ignora autoComplete="off" en campos
-  // que reconoce como dirección/contacto, así que le damos un token que no reconozca.
+  const direccionInputRef       = useRef(null);
+  const placesServiceDivRef     = useRef(null);
+  const autocompleteServiceRef  = useRef(null);
+  const placesServiceRef        = useRef(null);
+  // Valor "engañoso" para autocomplete: evita que el navegador intente meter sus propias
+  // sugerencias de direcciones/contactos guardados encima de las nuestras.
   const noAutofillToken = useRef(`no-autofill-${Math.random().toString(36).slice(2)}`).current;
 
-  // Inicializa el autocompletado de direcciones (Google Places) una sola vez
+  // Inicializa los servicios de Google Places (sin ningún widget visual de Google:
+  // el desplegable que se ve en pantalla es 100% nuestro, hecho con React normal)
   useEffect(() => {
-    if (!mapsLoaded || !window.google?.maps?.places || !direccionInputRef.current || autocompleteRef.current) return;
-    const autocomplete = new window.google.maps.places.Autocomplete(direccionInputRef.current, {
-      componentRestrictions: { country: "mx" },
-      fields: ["address_components", "formatted_address", "geometry"],
-      types: ["address"],
-    });
-    autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      if (!place?.geometry) return;
-      const comps = place.address_components || [];
-      const parte = (type) => comps.find(c => c.types.includes(type))?.long_name || "";
-      const calleNum = [parte("route"), parte("street_number")].filter(Boolean).join(" ");
-      const col = parte("sublocality") || parte("neighborhood") || parte("locality") || "";
-      const codigoPostal = parte("postal_code") || "";
-      setDireccion(calleNum || place.formatted_address || "");
-      if (col) setColonia(col);
-      if (codigoPostal) setCp(codigoPostal);
-      setDestinoCoords({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
-    });
-    autocompleteRef.current = autocomplete;
+    if (!mapsLoaded || !window.google?.maps?.places) return;
+    autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+    placesServiceRef.current = new window.google.maps.places.PlacesService(placesServiceDivRef.current);
   }, [mapsLoaded]);
+
+  // Busca predicciones de dirección (debounced) mientras el usuario escribe
+  useEffect(() => {
+    if (tipo !== "domicilio" || !autocompleteServiceRef.current || direccion.trim().length < 4) {
+      setPredicciones([]);
+      return;
+    }
+    setBuscandoPred(true);
+    const timer = setTimeout(() => {
+      autocompleteServiceRef.current.getPlacePredictions(
+        { input: direccion, componentRestrictions: { country: "mx" }, types: ["address"] },
+        (results, status) => {
+          setBuscandoPred(false);
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+            setPredicciones(results);
+            setMostrarPredicciones(true);
+          } else {
+            setPredicciones([]);
+          }
+        }
+      );
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [direccion, tipo]);
+
+  const seleccionarPrediccion = (pred) => {
+    setMostrarPredicciones(false);
+    setPredicciones([]);
+    setDireccion(pred.structured_formatting?.main_text || pred.description);
+    if (!placesServiceRef.current) return;
+    placesServiceRef.current.getDetails(
+      { placeId: pred.place_id, fields: ["address_components", "geometry", "formatted_address"] },
+      (place, status) => {
+        if (status !== window.google.maps.places.PlacesServiceStatus.OK || !place) return;
+        const comps = place.address_components || [];
+        const parte = (type) => comps.find(c => c.types.includes(type))?.long_name || "";
+        const calleNum = [parte("route"), parte("street_number")].filter(Boolean).join(" ");
+        const col = parte("sublocality") || parte("neighborhood") || parte("locality") || "";
+        const codigoPostal = parte("postal_code") || "";
+        setDireccion(calleNum || place.formatted_address || "");
+        if (col) setColonia(col);
+        if (codigoPostal) setCp(codigoPostal);
+        setDestinoCoords({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
+      }
+    );
+  };
 
   useEffect(() => {
     if (!slots.includes(hora)) setHora(slots[0]);
@@ -597,12 +633,14 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
       </div>
       {tipo==="domicilio" && (
         <div style={{ marginBottom:20, display:"flex", flexDirection:"column", gap:12 }}>
-          <div>
+          <div style={{ position:"relative" }}>
             <span style={s.label}>Dirección</span>
             <input
               ref={direccionInputRef}
               value={direccion}
               onChange={e=>{ setDireccion(e.target.value); setDestinoCoords(null); }}
+              onFocus={()=> predicciones.length>0 && setMostrarPredicciones(true)}
+              onBlur={()=> setTimeout(()=>setMostrarPredicciones(false), 150)}
               placeholder="Empieza a escribir tu calle y número…"
               name={noAutofillToken}
               autoComplete={noAutofillToken}
@@ -610,6 +648,25 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
               spellCheck="false"
               style={s.input}
             />
+            {mostrarPredicciones && predicciones.length>0 && (
+              <div style={{ position:"absolute", top:"100%", left:0, right:0, marginTop:4, background:card, border:`1.5px solid ${border}`, borderRadius:14, boxShadow:"0 8px 24px rgba(0,0,0,0.15)", zIndex:50, overflow:"hidden" }}>
+                {predicciones.map(p=>(
+                  <div
+                    key={p.place_id}
+                    onMouseDown={()=>seleccionarPrediccion(p)}
+                    style={{ padding:"11px 14px", fontFamily:"system-ui,sans-serif", fontSize:13, color:text, cursor:"pointer", borderBottom:`1px solid ${border}` }}
+                  >
+                    📍 {p.description}
+                  </div>
+                ))}
+              </div>
+            )}
+            {buscandoPred && (
+              <div style={{ fontFamily:"system-ui,sans-serif", fontSize:11, color:muted, marginTop:4 }}>Buscando direcciones…</div>
+            )}
+          </div>
+          <div>{/* div oculto requerido por PlacesService, no necesita ningún estilo visible */}
+            <div ref={placesServiceDivRef} style={{ display:"none" }} />
           </div>
           <div>
             <span style={s.label}>Referencias <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span>
@@ -1042,19 +1099,6 @@ export default function App() {
         * { box-sizing:border-box; }
         body { margin:0; }
         input,textarea,select { color-scheme:light; }
-        .pac-container {
-          z-index: 9999 !important;
-          border-radius: 14px !important;
-          border: 1.5px solid ${border} !important;
-          margin-top: 4px !important;
-          font-family: system-ui, sans-serif !important;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
-        }
-        .pac-item { padding: 8px 12px !important; font-size: 13px !important; cursor: pointer !important; }
-        .pac-item:hover { background: ${cardHi} !important; }
-        .pac-item-query { font-size: 13px !important; color: ${text} !important; }
-        .pac-icon { display: none !important; }
-        .pac-matched { font-weight: 700 !important; }
       `}</style>
       <HeaderCarrito carrito={carrito} abierto={abierto} />
       <div style={{ background:cardHi, borderBottom:`1px solid ${border}`, padding:"10px 20px", display:"flex", alignItems:"center", gap:8 }}>
