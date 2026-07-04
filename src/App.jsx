@@ -6,6 +6,40 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 const STRIPE_PK = import.meta.env.VITE_STRIPE_PK || "pk_test_51TliqAACUOsH5hVcm54scW6BB1ckWunpgt7XffvYSEQJev2Gl3enuVUXLUKCjTsj9VwRpvzuA3QOXWVJw7d2vzCm00eG4XZ1lh";
 const stripePromise = loadStripe(STRIPE_PK);
 
+// ── Envío por distancia (Google Maps) ────────────────────────────────────────
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyC3tjtwL3lZq43Y5BJ-OokTUTrEbBd-v0M";
+const ORIGIN_ADDRESS   = "Calle España 565, Reforma, 91919 Veracruz, Ver., México";
+const ENVIO_BASE_KM    = 1.5;   // hasta 1.5 km cuesta lo mismo
+const ENVIO_BASE_COSTO = 15;    // $15 hasta 1.5 km
+const ENVIO_KM_EXTRA   = 10;    // $10 por cada km extra (proporcional, no redondeado)
+const ENVIO_FALLBACK   = 30;    // si Maps no puede calcular la distancia
+
+function calcularEnvioPorDistancia(km) {
+  if (km <= ENVIO_BASE_KM) return ENVIO_BASE_COSTO;
+  const kmExtra = km - ENVIO_BASE_KM;
+  return Math.round(ENVIO_BASE_COSTO + kmExtra * ENVIO_KM_EXTRA);
+}
+
+function useGoogleMapsLoader() {
+  const [loaded, setLoaded] = useState(() => typeof window !== "undefined" && !!(window.google && window.google.maps));
+  useEffect(() => {
+    if (loaded) return;
+    const existing = document.getElementById("gmaps-script");
+    if (existing) {
+      existing.addEventListener("load", () => setLoaded(true));
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "gmaps-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}`;
+    script.async = true;
+    script.onload = () => setLoaded(true);
+    script.onerror = () => console.error("No se pudo cargar Google Maps JS API");
+    document.head.appendChild(script);
+  }, [loaded]);
+  return loaded;
+}
+
 const EJS_SERVICE     = "service_gdnezgh";
 const EJS_TPL_CLIENTE = "template_ko2otxk";
 const EJS_TPL_TIENDA  = "template_lmdnq8m";
@@ -454,12 +488,64 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
   const [tipo, setTipo] = useState("domicilio");
   const [hora, setHora] = useState(slots[0]);
 
+  const [direccion, setDireccion] = useState("");
+  const [colonia, setColonia]     = useState("");
+  const [cp, setCp]               = useState("");
+  const [distanciaKm, setDistanciaKm]     = useState(null);
+  const [calculando, setCalculando]       = useState(false);
+  const [errorDistancia, setErrorDistancia] = useState(false);
+
+  const mapsLoaded = useGoogleMapsLoader();
+
   useEffect(() => {
     if (!slots.includes(hora)) setHora(slots[0]);
   }, [slots, hora]);
+
+  // Calcula la distancia (debounced) cuando cambia dirección/colonia/cp
+  useEffect(() => {
+    if (tipo !== "domicilio") { setDistanciaKm(null); setErrorDistancia(false); return; }
+    if (direccion.trim().length < 5 || colonia.trim().length < 2) { setDistanciaKm(null); setErrorDistancia(false); return; }
+    if (!mapsLoaded || !window.google?.maps) return;
+
+    setCalculando(true);
+    setErrorDistancia(false);
+    const timer = setTimeout(() => {
+      const destino = `${direccion}, ${colonia}, ${cp ? `CP ${cp}, ` : ""}Veracruz, Ver., México`;
+      const service = new window.google.maps.DistanceMatrixService();
+      service.getDistanceMatrix(
+        {
+          origins: [ORIGIN_ADDRESS],
+          destinations: [destino],
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          unitSystem: window.google.maps.UnitSystem.METRIC,
+        },
+        (res, status) => {
+          setCalculando(false);
+          const el = res?.rows?.[0]?.elements?.[0];
+          if (status === "OK" && el?.status === "OK") {
+            setDistanciaKm(el.distance.value / 1000);
+            setErrorDistancia(false);
+          } else {
+            setDistanciaKm(null);
+            setErrorDistancia(true);
+          }
+        }
+      );
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [direccion, colonia, cp, tipo, mapsLoaded]);
+
   const subtotal = carrito.reduce((s,i)=>s+i.precio*i.cantidad,0);
-  const envio    = tipo==="domicilio"&&subtotal<200?30:0;
-  const total    = subtotal+envio;
+  const envio =
+    tipo !== "domicilio" ? 0
+    : distanciaKm != null ? calcularEnvioPorDistancia(distanciaKm)
+    : errorDistancia ? ENVIO_FALLBACK
+    : null; // null = aún calculando / faltan datos
+  const total = subtotal + (envio ?? 0);
+
+  const direccionCompleta = tipo === "domicilio" && direccion.trim() && colonia.trim() && cp.trim();
+  const puedeContinuar = tipo !== "domicilio" ? true : (direccionCompleta && envio !== null && !calculando);
+
   return (
     <div>
       <h2 style={{ fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:22, color:text, margin:"0 0 24px", textAlign:"center" }}>¿Cómo lo recibas?</h2>
@@ -474,6 +560,35 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
           ))}
         </div>
       </div>
+      {tipo==="domicilio" && (
+        <div style={{ marginBottom:20, display:"flex", flexDirection:"column", gap:12 }}>
+          <div>
+            <span style={s.label}>Dirección</span>
+            <textarea value={direccion} onChange={e=>setDireccion(e.target.value)} placeholder="Calle, número y referencias" rows={2} style={{ ...s.input, resize:"vertical" }} />
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:10 }}>
+            <div>
+              <span style={s.label}>Colonia</span>
+              <input value={colonia} onChange={e=>setColonia(e.target.value)} placeholder="Ej: Reforma" style={s.input} />
+            </div>
+            <div>
+              <span style={s.label}>Código postal</span>
+              <input value={cp} onChange={e=>setCp(e.target.value)} placeholder="91700" type="tel" maxLength={5} style={s.input} />
+            </div>
+          </div>
+          {direccionCompleta && (
+            <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted, display:"flex", alignItems:"center", gap:6 }}>
+              {calculando && <span>📍 Calculando distancia de envío…</span>}
+              {!calculando && distanciaKm != null && (
+                <span>📍 {distanciaKm.toFixed(1)} km de distancia · Envío: <b style={{ color:accent }}>${envio}</b></span>
+              )}
+              {!calculando && errorDistancia && (
+                <span>⚠️ No pudimos calcular la distancia exacta. Envío estimado: <b style={{ color:accent }}>${ENVIO_FALLBACK}</b></span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       <div style={{ marginBottom:20 }}>
         <span style={s.label}>{tipo==="domicilio"?"Horario de entrega":"Hora para recoger"}</span>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
@@ -501,11 +616,13 @@ function PasoEntrega({ carrito, onQuitar, onAdd, onNext, onBack, horarios }) {
         ))}
         <div style={{ borderTop:`1px solid ${border}`, marginTop:8, paddingTop:12 }}>
           <div style={{ display:"flex", justifyContent:"space-between", fontFamily:"system-ui,sans-serif", fontSize:13, color:muted, marginBottom:4 }}><span>Subtotal</span><span>${subtotal.toFixed(0)}</span></div>
-          <div style={{ display:"flex", justifyContent:"space-between", fontFamily:"system-ui,sans-serif", fontSize:13, color:muted, marginBottom:4 }}><span>Envío</span><span>{tipo==="recoger"?"—":envio===0?"🎉 Gratis":`$${envio}`}</span></div>
+          <div style={{ display:"flex", justifyContent:"space-between", fontFamily:"system-ui,sans-serif", fontSize:13, color:muted, marginBottom:4 }}><span>Envío</span><span>{tipo==="recoger"?"—":envio==null?"…":`$${envio}`}</span></div>
           <div style={{ display:"flex", justifyContent:"space-between", fontFamily:"system-ui,sans-serif", fontSize:17, fontWeight:800, color:text, marginTop:8 }}><span>Total</span><span style={{ color:accent }}>${total.toFixed(0)}</span></div>
         </div>
       </div>
-      <Btn onClick={()=>onNext({tipo,hora,subtotal,envio,total})} variant="primary">Continuar →</Btn>
+      <Btn onClick={()=>onNext({tipo,hora,subtotal,envio:envio??0,total,direccion,colonia,cp,distanciaKm})} variant="primary" disabled={!puedeContinuar}>
+        {tipo==="domicilio" && !direccionCompleta ? "Completa tu dirección" : calculando ? "Calculando envío…" : "Continuar →"}
+      </Btn>
       <div style={{ textAlign:"center", marginTop:10 }}><Btn onClick={onBack} variant="ghost">← Volver al menú</Btn></div>
     </div>
   );
@@ -573,21 +690,20 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
   const [nombre,setNombre]       = useState("");
   const [telefono,setTelefono]   = useState("");
   const [email,setEmail]         = useState("");
-  const [direccion,setDireccion] = useState("");
-  const [colonia,setColonia]     = useState("");
   const [numInt,setNumInt]       = useState("");
-  const [cp,setCp]               = useState("");
   const [pago,setPago]           = useState("efectivo");
   const [notas,setNotas]         = useState("");
   const [error,setError]         = useState(null);
   const [enviando,setEnviando]   = useState(false);
 
+  // La dirección, colonia y CP ya se capturaron en el paso de Entrega
+  const direccion = entrega.direccion || "";
+  const colonia   = entrega.colonia || "";
+  const cp        = entrega.cp || "";
+
   // Validación de campos antes de cualquier acción
   const validar = () => {
     if (!nombre.trim()||!telefono.trim()) { setError("Falta tu nombre o teléfono."); return false; }
-    if (entrega.tipo==="domicilio"&&!direccion.trim()) { setError("Falta la dirección."); return false; }
-    if (entrega.tipo==="domicilio"&&!colonia)          { setError("Selecciona tu colonia."); return false; }
-    if (entrega.tipo==="domicilio"&&!cp.trim())        { setError("Falta el código postal."); return false; }
     setError(null);
     return true;
   };
@@ -671,10 +787,13 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
         <div><span style={s.label}>Nombre</span><input value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="¿Cómo te llamas?" style={s.input} /></div>
         <div><span style={s.label}>Teléfono</span><input value={telefono} onChange={e=>setTelefono(e.target.value)} placeholder="229 000 0000" type="tel" style={s.input} /></div>
         <div><span style={s.label}>Correo <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="tucorreo@gmail.com" type="email" style={s.input} /></div>
-        {entrega.tipo==="domicilio"&&<div><span style={s.label}>Dirección</span><textarea value={direccion} onChange={e=>setDireccion(e.target.value)} placeholder="Calle, número y referencias" rows={2} style={{ ...s.input, resize:"vertical" }} /></div>}
+        {entrega.tipo==="domicilio"&&(
+          <div style={{ background:cardHi, border:`1.5px solid ${border}`, borderRadius:14, padding:"12px 16px" }}>
+            <span style={s.label}>Entregar en</span>
+            <div style={{ fontFamily:"system-ui,sans-serif", fontSize:13, color:text }}>{direccion}, {colonia}, CP {cp}</div>
+          </div>
+        )}
         {entrega.tipo==="domicilio"&&<div><span style={s.label}>Número interior <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span><input value={numInt} onChange={e=>setNumInt(e.target.value)} placeholder='Ej: "102A"' style={s.input} /></div>}
-        {entrega.tipo==="domicilio"&&<div><span style={s.label}>Colonia</span><select value={colonia} onChange={e=>setColonia(e.target.value)} style={{ ...s.input, appearance:"none", WebkitAppearance:"none" }}><option value="">Selecciona tu colonia…</option>{ZONAS.map(z=><option key={z} value={z}>{z}</option>)}</select></div>}
-        {entrega.tipo==="domicilio"&&<div><span style={s.label}>Código postal</span><input value={cp} onChange={e=>setCp(e.target.value)} placeholder="91700" type="tel" maxLength={5} style={s.input} /></div>}
         <div>
           <span style={s.label}>Forma de pago</span>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
