@@ -75,7 +75,8 @@ function guardarLS(key, value) {
   } catch {}
 }
 
-// ── Ruteo por paso en la URL (/paso-1, /paso-2, /paso-3, /paso-4) ──────────
+// ── Ruteo por paso en la URL (/paso-2, /paso-3, /paso-4) ──────────
+// El paso 1 vive en "/" (sin sufijo); a partir del paso 2 se agrega /paso-N.
 // Así, al recargar la página, la URL le dice a la app en qué paso se quedó.
 function pasoDesdeURL() {
   if (typeof window === "undefined") return 1;
@@ -85,7 +86,7 @@ function pasoDesdeURL() {
 }
 function actualizarURL(paso, reemplazar) {
   if (typeof window === "undefined") return;
-  const url = `/paso-${paso}`;
+  const url = paso <= 1 ? "/" : `/paso-${paso}`;
   if (window.location.pathname === url) return;
   if (reemplazar) window.history.replaceState({ paso }, "", url);
   else window.history.pushState({ paso }, "", url);
