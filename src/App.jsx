@@ -3,7 +3,7 @@ import emailjs from "@emailjs/browser";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-const STRIPE_PK = import.meta.env.VITE_STRIPE_PK || "pk_test_51TliqAACUOsH5hVcm54scW6BB1ckWunpgt7XffvYSEQJev2Gl3enuVUXLUKCjTsj9VwRpvzuA3QOXWVJw7d2vzCm00eG4XZ1lh";
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PK || "pk_live_51TliqAACUOsH5hVccpxlCyAYeTmRD0vBUJAsUIMlbM7njbFRULdt8YNPcF9kTz4XAkWTr0v7BIig6uiTHcNwEeRD007Bq22wyE";
 const stripePromise = loadStripe(STRIPE_PK);
 
 // ── Envío por distancia (Google Maps) ────────────────────────────────────────
