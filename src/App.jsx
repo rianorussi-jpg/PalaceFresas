@@ -57,6 +57,51 @@ async function sendTelegram(text) {
   } catch (e) { console.error("Telegram error:", e); }
 }
 
+// ── Persistencia en localStorage (carrito / entrega / confirmación) ────────
+const LS_KEY_CARRITO      = "fp_carrito";
+const LS_KEY_ENTREGA      = "fp_entrega";
+const LS_KEY_CONFIRMACION = "fp_confirmacion";
+
+function leerLS(key) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function guardarLS(key, value) {
+  try {
+    if (value === null || value === undefined) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+
+// ── Ruteo por paso en la URL (/paso-1, /paso-2, /paso-3, /paso-4) ──────────
+// Así, al recargar la página, la URL le dice a la app en qué paso se quedó.
+function pasoDesdeURL() {
+  if (typeof window === "undefined") return 1;
+  const m = window.location.pathname.match(/paso-(\d)/);
+  const n = m ? parseInt(m[1], 10) : 1;
+  return n >= 1 && n <= 4 ? n : 1;
+}
+function actualizarURL(paso, reemplazar) {
+  if (typeof window === "undefined") return;
+  const url = `/paso-${paso}`;
+  if (window.location.pathname === url) return;
+  if (reemplazar) window.history.replaceState({ paso }, "", url);
+  else window.history.pushState({ paso }, "", url);
+}
+// Calcula el paso inicial combinando la URL con lo que haya en localStorage,
+// para no mostrar un paso 3/4 sin los datos (entrega/confirmación) que necesita.
+function pasoInicial() {
+  if (typeof window === "undefined") return 1;
+  let n = pasoDesdeURL();
+  const entregaGuardada = leerLS(LS_KEY_ENTREGA);
+  const confirmacionGuardada = leerLS(LS_KEY_CONFIRMACION);
+  if (n === 4 && !confirmacionGuardada) n = entregaGuardada ? 3 : 1;
+  if (n === 3 && !entregaGuardada) n = 1;
+  return n;
+}
+
 const bg     = "#fff5f7";
 const card   = "#ffffff";
 const cardHi = "#fdedf0";
@@ -811,7 +856,6 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
   const [nombre,setNombre]       = useState("");
   const [telefono,setTelefono]   = useState("");
   const [email,setEmail]         = useState("");
-  const [numInt,setNumInt]       = useState("");
   const [pago,setPago]           = useState("efectivo");
   const [notas,setNotas]         = useState("");
   const [error,setError]         = useState(null);
@@ -834,7 +878,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
     const resumen    = buildResumen(carrito);
     const tipoLabel  = entrega.tipo==="domicilio"?"🛵 A domicilio":"🏪 Recoger en tienda";
     const pagoLabel  = pago==="efectivo"?"💵 Efectivo":pago==="tarjeta"?`💳 Tarjeta (Stripe ${pagoId||""})`.trim():"📲 Transferencia";
-    const dirCompleta = entrega.tipo==="domicilio" ? `${direccion}${numInt?`, Int. ${numInt}`:""}, ${colonia}, CP ${cp}${referencias?` — Ref: ${referencias}`:""}` : "—";
+    const dirCompleta = entrega.tipo==="domicilio" ? `${direccion}, ${colonia}, CP ${cp}${referencias?` — Ref: ${referencias}`:""}` : "—";
 
     try {
       emailjs.init(EJS_PUBLIC);
@@ -845,7 +889,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
         envio: entrega.envio===0?"Gratis":`$${entrega.envio.toFixed(0)}`,
         total: `$${entrega.total.toFixed(0)}`,
         tipo_entrega: tipoLabel, horario: entrega.hora, forma_pago: pagoLabel,
-        direccion: dirCompleta, colonia: colonia||"—", num_interior: numInt||"—", cp: cp||"—",
+        direccion: dirCompleta, colonia: colonia||"—", cp: cp||"—",
         notas: notas||"Sin notas",
       });
     } catch (e) { console.error("EmailJS tienda:", e); }
@@ -887,7 +931,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
     const folio = `#FP:${String(num).padStart(4,"0")}`;
     await enviarNotificaciones({ folio, pagoId: null });
     setEnviando(false);
-    onConfirmar({ folio, nombre, telefono, email, direccion, numInt, colonia, cp, pago, notas });
+    onConfirmar({ folio, nombre, telefono, email, direccion, colonia, cp, pago, notas });
   };
 
   // Callback cuando Stripe confirma el pago exitosamente
@@ -896,7 +940,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
     const folio = `#FP:${String(num).padStart(4,"0")}`;
     await enviarNotificaciones({ folio, pagoId });
     setEnviando(false);
-    onConfirmar({ folio, nombre, telefono, email, direccion, numInt, colonia, cp, pago, notas });
+    onConfirmar({ folio, nombre, telefono, email, direccion, colonia, cp, pago, notas });
   };
 
   const mostrarStripe = pago === "tarjeta";
@@ -916,7 +960,6 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
             {referencias && <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted, marginTop:4 }}>Ref: {referencias}</div>}
           </div>
         )}
-        {entrega.tipo==="domicilio"&&<div><span style={s.label}>Número interior <span style={{ color:muted, textTransform:"none", fontSize:10 }}>(opcional)</span></span><input value={numInt} onChange={e=>setNumInt(e.target.value)} placeholder='Ej: "102A"' style={s.input} /></div>}
         <div>
           <span style={s.label}>Forma de pago</span>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
@@ -1066,12 +1109,33 @@ function HeaderCarrito({ carrito, abierto }) {
 }
 
 export default function App() {
-  const [paso,setPaso]                 = useState(1);
-  const [carrito,setCarrito]           = useState([]);
-  const [entrega,setEntrega]           = useState(null);
+  const [paso,setPasoState]            = useState(pasoInicial);
+  const [carrito,setCarrito]           = useState(() => leerLS(LS_KEY_CARRITO) || []);
+  const [entrega,setEntrega]           = useState(() => leerLS(LS_KEY_ENTREGA));
   const [abierto,setAbierto]           = useState(null);
   const [horariosDia,setHorariosDia]   = useState(() => getHorarios(new Date().getDay()));
-  const [confirmacion,setConfirmacion] = useState(null);
+  const [confirmacion,setConfirmacion] = useState(() => leerLS(LS_KEY_CONFIRMACION));
+
+  // Cambia de paso y refleja el número de paso en la URL (/paso-1, /paso-2…)
+  const irAPaso = (n, reemplazar=false) => {
+    setPasoState(n);
+    actualizarURL(n, reemplazar);
+  };
+
+  // Al montar: deja la URL en sincronía con el paso inicial calculado y
+  // escucha el botón "atrás/adelante" del navegador para reflejar el paso.
+  useEffect(() => {
+    actualizarURL(paso, true);
+    const onPopState = () => setPasoState(pasoDesdeURL());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Guarda automáticamente el carrito, la entrega y la confirmación
+  useEffect(() => { guardarLS(LS_KEY_CARRITO, carrito); }, [carrito]);
+  useEffect(() => { guardarLS(LS_KEY_ENTREGA, entrega); }, [entrega]);
+  useEffect(() => { guardarLS(LS_KEY_CONFIRMACION, confirmacion); }, [confirmacion]);
 
   useEffect(()=>{
     fetch("https://timeapi.io/api/time/current/zone?timeZone=America%2FMexico_City")
@@ -1105,8 +1169,12 @@ export default function App() {
       return prev.map(i => i === ex ? { ...i, cantidad: i.cantidad - 1 } : i);
     });
   };
-  const handleConfirmar = ({ folio, ...datos }) => { setConfirmacion({ folio, datos }); setPaso(4); };
-  const reset = () => { setCarrito([]); setEntrega(null); setConfirmacion(null); setPaso(1); };
+  const handleConfirmar = ({ folio, ...datos }) => { setConfirmacion({ folio, datos }); irAPaso(4); };
+  const reset = () => {
+    setCarrito([]); setEntrega(null); setConfirmacion(null);
+    guardarLS(LS_KEY_CARRITO, null); guardarLS(LS_KEY_ENTREGA, null); guardarLS(LS_KEY_CONFIRMACION, null);
+    irAPaso(1);
+  };
 
   return (
     <div style={{ background:bg, minHeight:"100vh", color:text, fontFamily:"system-ui,sans-serif" }}>
@@ -1122,9 +1190,9 @@ export default function App() {
       </div>
       <div style={{ maxWidth:520, margin:"0 auto", padding:"24px 16px 40px" }}>
         {paso<4&&<Pasos paso={paso} />}
-        {paso===1&&<PasoMenu carrito={carrito} onAdd={agregar} onNext={()=>setPaso(2)} />}
-        {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={agregar} horarios={horariosDia} onNext={e=>{setEntrega(e);setPaso(3);}} onBack={()=>setPaso(1)} />}
-        {paso===3&&<PasoDatos entrega={entrega} carrito={carrito} onBack={()=>setPaso(2)} onConfirmar={handleConfirmar} />}
+        {paso===1&&<PasoMenu carrito={carrito} onAdd={agregar} onNext={()=>irAPaso(2)} />}
+        {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={agregar} horarios={horariosDia} onNext={e=>{setEntrega(e);irAPaso(3);}} onBack={()=>irAPaso(1)} />}
+        {paso===3&&<PasoDatos entrega={entrega} carrito={carrito} onBack={()=>irAPaso(2)} onConfirmar={handleConfirmar} />}
         {paso===4&&confirmacion&&<Confirmacion folio={confirmacion.folio} nombre={confirmacion.datos.nombre} entrega={entrega} carrito={carrito} onNuevoPedido={reset} />}
       </div>
     </div>
