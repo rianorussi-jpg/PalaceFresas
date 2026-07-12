@@ -160,7 +160,7 @@ const MENU = {
   antojitos: {
     label: "Antojitos", emoji: "🌮",
     items: [
-      { id:"elote",               img:"https://i.ibb.co/jvN9xfJ9/PHOTO-2026-06-23-21-30-15.jpg",               emoji:"🌽", nombre:"Elote",              desc:"Elote con crema, queso, chile y limón",              precios:{ "Regular":45 } },
+      { id:"elote",               img:"https://i.ibb.co/jvN9xfJ9/PHOTO-2026-06-23-21-30-15.jpg",               emoji:"🌽", nombre:"Elote",              desc:"Elote preparado con crema, queso, chile y limón",              precios:{ "Regular":45 } },
       { id:"chicharron-preparado",img:"https://i.ibb.co/svfX5Kxc/PHOTO-2026-06-23-21-15-36.jpg",emoji:"🥓", nombre:"Chicharrón Preparado", desc:"Chicharrón preparado al estilo Veracruz", precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy",          img:"https://i.ibb.co/Cy27x3q/PHOTO-2026-06-23-21-30-15-2.jpg",          emoji:"🔥", nombre:"Tosticrazy",         desc:"Tostielote con todo el sabor",                              precios:{ "Natural":75, "Amarillo":80 }, tipo:"grano" },
       { id:"tosticrazy-xl",       img:"https://i.ibb.co/Cy27x3q/PHOTO-2026-06-23-21-30-15-2.jpg",       emoji:"🔥", nombre:"Tosticrazy XL",      desc:"Tostielote extra grande con todo el sabor",                 precios:{ "Natural":125, "Amarillo":135 }, tipo:"grano" },
@@ -944,7 +944,7 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar, productosPorSlug }) 
         total: entrega.total,
         status: "pendiente",
         delivery_type: entrega.tipo,          // "domicilio" | "recoger"
-        adress: entrega.tipo === "domicilio" ? dirCompleta : null,
+        address: entrega.tipo === "domicilio" ? dirCompleta : null,
         delivery_time: entrega.hora,
         notes: [notas, `Folio: ${folio}`].filter(Boolean).join(" · "),
       });
