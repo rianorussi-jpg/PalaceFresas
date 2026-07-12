@@ -1,10 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import emailjs from "@emailjs/browser";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { createClient } from "@supabase/supabase-js";
 
 const STRIPE_PK = import.meta.env.VITE_STRIPE_PK || "pk_live_51TliqAACUOsH5hVccpxlCyAYeTmRD0vBUJAsUIMlbM7njbFRULdt8YNPcF9kTz4XAkWTr0v7BIig6uiTHcNwEeRD007Bq22wyE";
 const stripePromise = loadStripe(STRIPE_PK);
+
+// ── Panel de clientes (panel.creatusitio.mx) ────────────────────────────────
+const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const BUSINESS_ID       = "c8178d51-f439-4f88-89d0-0c338e21d1aa"; // Fresas Palace
+const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+// Genera un UUID v4 en el navegador (evita depender de .select() en el insert,
+// que choca con las políticas RLS de insert anónimo del panel).
+function uuidv4() {
+  return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+    (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
+  );
+}
 
 // ── Envío por distancia (Google Maps) ────────────────────────────────────────
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyC3tjtwL3lZq43Y5BJ-OokTUTrEbBd-v0M";
@@ -207,6 +222,41 @@ const s = {
 
 function carritoLineKey(i) {
   return i.uid || `${i.id}|${i.tamano}|${i.precio}`;
+}
+
+// ── Productos apagados/prendidos desde el panel ────────────────────────────
+// Los ids de MENU (ej. "fresas-chica", "lotus") se usan como `slug` en la
+// tabla `products`. Si un slug no existe todavía en la tabla se trata como
+// activo (para no ocultar nada mientras el negocio no lo haya dado de alta
+// en el panel). Solo se oculta si existe la fila y active=false.
+function useProductosPanel() {
+  const [productos, setProductos] = useState([]);
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelado = false;
+    supabase
+      .from("products")
+      .select("id, slug, active")
+      .eq("business_id", BUSINESS_ID)
+      .then(({ data, error }) => {
+        if (error) { console.error("Supabase products:", error); return; }
+        if (!cancelado) setProductos(data || []);
+      });
+    return () => { cancelado = true; };
+  }, []);
+
+  const porSlug = useMemo(() => {
+    const map = {};
+    productos.forEach(p => { if (p.slug) map[p.slug] = p; });
+    return map;
+  }, [productos]);
+
+  const slugsInactivos = useMemo(
+    () => new Set(productos.filter(p => p.active === false).map(p => p.slug)),
+    [productos]
+  );
+
+  return { porSlug, slugsInactivos };
 }
 
 function buildResumen(carrito) {
@@ -424,7 +474,7 @@ function ArizonaModal({ item, precioBase, onConfirm, onClose }) {
 }
 
 
-function ProductoCard({ item, onAdd, carritoItems }) {
+function ProductoCard({ item, onAdd, carritoItems, inactivo }) {
   const tamanos    = Object.keys(item.precios);
   const [tam, setTam]             = useState(tamanos[0]);
   const [conTocino, setConTocino] = useState(false);
@@ -438,6 +488,7 @@ function ProductoCard({ item, onAdd, carritoItems }) {
   const precioActual = item.precios[tam] + (esGrano && conTocino ? 10 : 0);
 
   const handleAdd = () => {
+    if (inactivo) return;
     if (esFresa || esEspecial || esArizona) { setShowModal(true); return; }
     const tamanoLabel = esGrano
       ? `Grano ${tam}${conTocino ? " · Con tocino" : ""}`
@@ -462,15 +513,18 @@ function ProductoCard({ item, onAdd, carritoItems }) {
       {showModal && esArizona && (
         <ArizonaModal item={item} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
       )}
-      <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:"16px", display:"flex", alignItems:"center", gap:14 }}>
+      <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:"16px", display:"flex", alignItems:"center", gap:14, opacity:inactivo?0.5:1 }}>
         <div style={{ width:72, height:72, borderRadius:14, background:pill, flexShrink:0, overflow:"hidden", position:"relative" }}>
           {item.img
-            ? <img src={item.img} alt={item.nombre} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} onError={e=>{ e.currentTarget.style.display="none"; e.currentTarget.parentNode.querySelector("span").style.display="flex"; }} />
+            ? <img src={item.img} alt={item.nombre} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block", filter:inactivo?"grayscale(1)":"none" }} onError={e=>{ e.currentTarget.style.display="none"; e.currentTarget.parentNode.querySelector("span").style.display="flex"; }} />
             : null}
           <span style={{ fontSize:36, display: item.img ? "none" : "flex", alignItems:"center", justifyContent:"center", width:"100%", height:"100%", position:"absolute", inset:0 }}>{item.emoji}</span>
         </div>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, color:text, marginBottom:2 }}>{item.nombre}</div>
+          <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:15, color:text, marginBottom:2, display:"flex", alignItems:"center", gap:8 }}>
+            {item.nombre}
+            {inactivo && <span style={{ fontSize:10, fontWeight:700, color:"#a33", background:"#f5d9d9", borderRadius:6, padding:"2px 7px", textTransform:"uppercase", letterSpacing:"0.04em" }}>Agotado</span>}
+          </div>
           <p style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted, margin:"0 0 8px", lineHeight:1.4 }}>{item.desc}</p>
           {esGrano ? (
             <div>
@@ -493,8 +547,8 @@ function ProductoCard({ item, onAdd, carritoItems }) {
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
           <span style={{ fontFamily:"system-ui,sans-serif", fontWeight:800, fontSize:17, color:accent }}>${precioActual}</span>
-          <button onClick={handleAdd} style={{ border:"none", cursor:"pointer", borderRadius:10, padding:"7px 14px", background:flash?"#2a7c3a":pill, color:flash?"#7fff9f":text, fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, transition:"all 0.2s", whiteSpace:"nowrap" }}>
-            {flash?"✓":enCarrito>0?`+1 (${enCarrito})`:esArizona?"🍵 Sabor":esEspecial?`${item.emoji} Armar`:esFresa?"🍓 Armar":"+Agregar"}
+          <button onClick={handleAdd} disabled={inactivo} style={{ border:"none", cursor:inactivo?"default":"pointer", borderRadius:10, padding:"7px 14px", background:inactivo?"#eee":flash?"#2a7c3a":pill, color:inactivo?muted:flash?"#7fff9f":text, fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:13, transition:"all 0.2s", whiteSpace:"nowrap" }}>
+            {inactivo?"Agotado":flash?"✓":enCarrito>0?`+1 (${enCarrito})`:esArizona?"🍵 Sabor":esEspecial?`${item.emoji} Armar`:esFresa?"🍓 Armar":"+Agregar"}
           </button>
         </div>
       </div>
@@ -502,7 +556,7 @@ function ProductoCard({ item, onAdd, carritoItems }) {
   );
 }
 
-function PasoMenu({ carrito, onAdd, onNext }) {
+function PasoMenu({ carrito, onAdd, onNext, slugsInactivos }) {
   const total = carrito.reduce((s,i)=>s+i.precio*i.cantidad,0);
   const count = carrito.reduce((s,i)=>s+i.cantidad,0);
   return (
@@ -512,7 +566,7 @@ function PasoMenu({ carrito, onAdd, onNext }) {
         <div key={key} style={{ marginBottom:28 }}>
           <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:600, fontSize:12, textTransform:"uppercase", letterSpacing:"0.12em", color:muted, marginBottom:12 }}>{cat.emoji} {cat.label}</div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {cat.items.map(item=><ProductoCard key={item.id} item={item} onAdd={onAdd} carritoItems={carrito} />)}
+            {cat.items.map(item=><ProductoCard key={item.id} item={item} onAdd={onAdd} carritoItems={carrito} inactivo={slugsInactivos.has(item.id)} />)}
           </div>
         </div>
       ))}
@@ -853,7 +907,7 @@ function StripeCardForm({ entrega, carrito, datosCliente, onPagoExitoso, onError
   );
 }
 
-function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
+function PasoDatos({ entrega, carrito, onBack, onConfirmar, productosPorSlug }) {
   const [nombre,setNombre]       = useState("");
   const [telefono,setTelefono]   = useState("");
   const [email,setEmail]         = useState("");
@@ -873,6 +927,40 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
     if (!nombre.trim()||!telefono.trim()) { setError("Falta tu nombre o teléfono."); return false; }
     setError(null);
     return true;
+  };
+
+  // Inserta el pedido en Supabase para que aparezca en tiempo real en el panel
+  // (panel.creatusitio.mx). No bloquea ni tumba el flujo si falla: Telegram/
+  // EmailJS ya garantizan que el pedido le llega al negocio de todos modos.
+  const insertarPedidoPanel = async ({ folio, dirCompleta }) => {
+    if (!supabase) return;
+    try {
+      const orderId = uuidv4();
+      const { error: errOrder } = await supabase.from("orders").insert({
+        id: orderId,
+        business_id: BUSINESS_ID,
+        customer_name: nombre,
+        phone: telefono,
+        total: entrega.total,
+        status: "pendiente",
+        delivery_type: entrega.tipo,          // "domicilio" | "recoger"
+        adress: entrega.tipo === "domicilio" ? dirCompleta : null,
+        delivery_time: entrega.hora,
+        notes: [notas, `Folio: ${folio}`].filter(Boolean).join(" · "),
+      });
+      if (errOrder) { console.error("Supabase orders insert:", errOrder); return; }
+
+      const items = carrito.map(i => ({
+        id: uuidv4(),
+        order_id: orderId,
+        product_id: productosPorSlug[i.id]?.id || null,
+        quantity: i.cantidad,
+        price: i.precio,
+        product_name: `${i.nombre} (${i.tamano}${i.toppings ? ` · ${i.toppings}` : ""})`,
+      }));
+      const { error: errItems } = await supabase.from("order_items").insert(items);
+      if (errItems) console.error("Supabase order_items insert:", errItems);
+    } catch (e) { console.error("Supabase pedido:", e); }
   };
 
   const enviarNotificaciones = async ({ folio, pagoId }) => {
@@ -921,7 +1009,10 @@ function PasoDatos({ entrega, carrito, onBack, onConfirmar }) {
       pagoId ? `💳 Stripe ID: ${pagoId}` : "",
       notas?`\n📝 Notas: ${notas}`:"",
     ].filter(l=>l!=="").join("\n");
-    await sendTelegram(tgMsg);
+    await Promise.all([
+      sendTelegram(tgMsg),
+      insertarPedidoPanel({ folio, dirCompleta }),
+    ]);
   };
 
   // Flujo efectivo / transferencia
@@ -1116,6 +1207,7 @@ export default function App() {
   const [abierto,setAbierto]           = useState(null);
   const [horariosDia,setHorariosDia]   = useState(() => getHorarios(new Date().getDay()));
   const [confirmacion,setConfirmacion] = useState(() => leerLS(LS_KEY_CONFIRMACION));
+  const { porSlug, slugsInactivos }    = useProductosPanel();
 
   // Cambia de paso y refleja el número de paso en la URL (/paso-1, /paso-2…)
   const irAPaso = (n, reemplazar=false) => {
@@ -1191,9 +1283,9 @@ export default function App() {
       </div>
       <div style={{ maxWidth:520, margin:"0 auto", padding:"24px 16px 40px" }}>
         {paso<4&&<Pasos paso={paso} />}
-        {paso===1&&<PasoMenu carrito={carrito} onAdd={agregar} onNext={()=>irAPaso(2)} />}
+        {paso===1&&<PasoMenu carrito={carrito} onAdd={agregar} onNext={()=>irAPaso(2)} slugsInactivos={slugsInactivos} />}
         {paso===2&&<PasoEntrega carrito={carrito} onQuitar={quitar} onAdd={agregar} horarios={horariosDia} onNext={e=>{setEntrega(e);irAPaso(3);}} onBack={()=>irAPaso(1)} />}
-        {paso===3&&<PasoDatos entrega={entrega} carrito={carrito} onBack={()=>irAPaso(2)} onConfirmar={handleConfirmar} />}
+        {paso===3&&<PasoDatos entrega={entrega} carrito={carrito} onBack={()=>irAPaso(2)} onConfirmar={handleConfirmar} productosPorSlug={porSlug} />}
         {paso===4&&confirmacion&&<Confirmacion folio={confirmacion.folio} nombre={confirmacion.datos.nombre} entrega={entrega} carrito={carrito} onNuevoPedido={reset} />}
       </div>
     </div>
