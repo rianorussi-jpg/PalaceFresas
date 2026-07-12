@@ -21,6 +21,15 @@ function uuidv4() {
   );
 }
 
+// Convierte "Chispas de chocolate" → "chispas-de-chocolate" para usarlo como slug
+function slugify(str) {
+  return str
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 // ── Envío por distancia (Google Maps) ────────────────────────────────────────
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyC3tjtwL3lZq43Y5BJ-OokTUTrEbBd-v0M";
 const ORIGIN_ADDRESS   = "Calle España 565, Reforma, 91919 Veracruz, Ver., México";
@@ -301,11 +310,28 @@ const TOPPINGS_PREMIUM  = [{ nombre:"Cheesecake",extra:30 },{ nombre:"Huevito Ki
 const TOPPINGS_ESPECIAL = [{ nombre:"Conejito Turín",extra:20 },{ nombre:"Snicker",extra:20 },{ nombre:"Kinder",extra:20 },{ nombre:"Kinder Delice",extra:20 },{ nombre:"Galleta Doble Chocolate",extra:20 },{ nombre:"Galleta Lotus",extra:20 }];
 const JARABES           = [{ nombre:"Chocolate",extra:10 },{ nombre:"Fresa",extra:10 },{ nombre:"Cajeta",extra:10 },{ nombre:"Lechera",extra:10 }];
 
+// Slug con el que cada topping/jarabe se identifica en la tabla `products`
+// del panel (categoría "topping" / "jarabe"), para poder prenderlos/apagarlos.
+const slugTopping = (nombre) => `topping-${slugify(nombre)}`;
+const slugJarabe  = (nombre) => `jarabe-${slugify(nombre)}`;
+const slugSabor   = (nombre) => `sabor-${slugify(nombre)}`;
+
+// Filtra una lista de toppings (strings u objetos {nombre}) quitando los que
+// estén apagados desde el panel. `slugFn` decide el prefijo de slug a usar.
+function filtrarActivos(lista, slugFn, slugsInactivos) {
+  if (!slugsInactivos || slugsInactivos.size === 0) return lista;
+  return lista.filter(t => !slugsInactivos.has(slugFn(typeof t === "string" ? t : t.nombre)));
+}
+
 // ── Modal fresas clásicas (con toppings gratis obligatorios) ──────────────────
-function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
+function ToppingModal({ item, tamano, precioBase, onConfirm, onClose, slugsInactivos }) {
   const isChica  = tamano === "Chica";
   const isGrande = tamano === "Grande";
-  const maxGratis = isChica ? 1 : 2;
+  const gratisDisponibles   = filtrarActivos(TOPPINGS_GRATIS, slugTopping, slugsInactivos);
+  const maxGratis = Math.min(isChica ? 1 : 2, gratisDisponibles.length || 1);
+  const premiumDisponibles  = filtrarActivos(TOPPINGS_PREMIUM, slugTopping, slugsInactivos);
+  const especialDisponibles = filtrarActivos(TOPPINGS_ESPECIAL, slugTopping, slugsInactivos);
+  const jarabesDisponibles  = filtrarActivos(JARABES, slugJarabe, slugsInactivos);
 
   const [selGratis,   setSelGratis]   = useState([]);
   const [selPremium,  setSelPremium]  = useState([]);
@@ -349,13 +375,13 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
           <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
         </div>
         <div style={secTitle}>🎉 Toppings incluidos — elige {maxGratis}<span style={{ color:muted, fontWeight:400, fontSize:11, marginLeft:6, textTransform:"none" }}>({selGratis.length}/{maxGratis})</span></div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_GRATIS.map(t=><button key={t} onClick={()=>toggleGratis(t)} style={chip(selGratis.includes(t))}>{t}</button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{gratisDisponibles.map(t=><button key={t} onClick={()=>toggleGratis(t)} style={chip(selGratis.includes(t))}>{t}</button>)}</div>
         <div style={secTitle}>⭐ Premium — +$30 c/u</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_PREMIUM.map(t=><button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>{t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span></button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{premiumDisponibles.map(t=><button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>{t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span></button>)}</div>
         <div style={secTitle}>✨ Especial — {isGrande?"1 gratis 🎁":"+$20"}</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_ESPECIAL.map(t=><button key={t.nombre} onClick={()=>toggleEspecial(t)} style={chip(selEspecial===t.nombre)}>{t.nombre} {!isGrande&&<span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span>}{isGrande&&<span style={{ fontSize:11, color:"#2a7c3a" }}>gratis</span>}</button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{especialDisponibles.map(t=><button key={t.nombre} onClick={()=>toggleEspecial(t)} style={chip(selEspecial===t.nombre)}>{t.nombre} {!isGrande&&<span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span>}{isGrande&&<span style={{ fontSize:11, color:"#2a7c3a" }}>gratis</span>}</button>)}</div>
         <div style={secTitle}>🍯 Jarabe — +$10</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{JARABES.map(j=><button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>{j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span></button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{jarabesDisponibles.map(j=><button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>{j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span></button>)}</div>
         {error && <div style={{ background:accent+"18", border:`1px solid ${accent}55`, borderRadius:10, padding:"10px 14px", fontFamily:"system-ui,sans-serif", fontSize:13, color:accent, marginTop:14 }}>{error}</div>}
         <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"14px 16px", marginTop:18, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
@@ -370,7 +396,12 @@ function ToppingModal({ item, tamano, precioBase, onConfirm, onClose }) {
 }
 
 // ── Modal Dubai / Lotus (básicos +$10, resto opcional) ───────────────────────
-function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) {
+function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose, slugsInactivos }) {
+  const basicosDisponibles  = filtrarActivos(TOPPINGS_GRATIS, slugTopping, slugsInactivos);
+  const premiumDisponibles  = filtrarActivos(TOPPINGS_PREMIUM, slugTopping, slugsInactivos);
+  const especialDisponibles = filtrarActivos(TOPPINGS_ESPECIAL, slugTopping, slugsInactivos);
+  const jarabesDisponibles  = filtrarActivos(JARABES, slugJarabe, slugsInactivos);
+
   const [selBasicos,  setSelBasicos]  = useState([]);
   const [selPremium,  setSelPremium]  = useState([]);
   const [selEspecial, setSelEspecial] = useState(null);
@@ -407,13 +438,13 @@ function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) 
           <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
         </div>
         <div style={secTitle}>🎉 Básicos — +$10 c/u</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_GRATIS.map(t=><button key={t} onClick={()=>toggleBasicos(t)} style={chip(selBasicos.includes(t))}>{t} <span style={{ fontSize:11, color:selBasicos.includes(t)?accent:muted }}>+$10</span></button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{basicosDisponibles.map(t=><button key={t} onClick={()=>toggleBasicos(t)} style={chip(selBasicos.includes(t))}>{t} <span style={{ fontSize:11, color:selBasicos.includes(t)?accent:muted }}>+$10</span></button>)}</div>
         <div style={secTitle}>⭐ Premium — +$30 c/u</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_PREMIUM.map(t=><button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>{t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span></button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{premiumDisponibles.map(t=><button key={t.nombre} onClick={()=>togglePremium(t)} style={chip(selPremium.includes(t.nombre))}>{t.nombre} <span style={{ fontSize:11, color:selPremium.includes(t.nombre)?accent:muted }}>+$30</span></button>)}</div>
         <div style={secTitle}>✨ Especial — +$20</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{TOPPINGS_ESPECIAL.map(t=><button key={t.nombre} onClick={()=>setSelEspecial(selEspecial===t.nombre?null:t.nombre)} style={chip(selEspecial===t.nombre)}>{t.nombre} <span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span></button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{especialDisponibles.map(t=><button key={t.nombre} onClick={()=>setSelEspecial(selEspecial===t.nombre?null:t.nombre)} style={chip(selEspecial===t.nombre)}>{t.nombre} <span style={{ fontSize:11, color:selEspecial===t.nombre?accent:muted }}>+$20</span></button>)}</div>
         <div style={secTitle}>🍯 Jarabe — +$10</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{JARABES.map(j=><button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>{j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span></button>)}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{jarabesDisponibles.map(j=><button key={j.nombre} onClick={()=>setSelJarabe(selJarabe===j.nombre?null:j.nombre)} style={chip(selJarabe===j.nombre)}>{j.nombre} <span style={{ fontSize:11, color:selJarabe===j.nombre?accent:muted }}>+$10</span></button>)}</div>
         <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:14, padding:"14px 16px", marginTop:18, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ fontFamily:"system-ui,sans-serif", fontSize:12, color:muted }}>Precio base ${precioBase}{totalExtra>0?` + extras $${totalExtra}`:""}</div>
@@ -429,7 +460,8 @@ function ToppingModalOpcional({ item, tamano, precioBase, onConfirm, onClose }) 
 // ── Modal Arizona (selección de sabor) ───────────────────────────────────────
 const ARIZONA_SABORES = ["Mango","Ponche","Fresa Kiwi","Sandía","Té Verde"];
 
-function ArizonaModal({ item, precioBase, onConfirm, onClose }) {
+function ArizonaModal({ item, precioBase, onConfirm, onClose, slugsInactivos }) {
+  const saboresDisponibles = filtrarActivos(ARIZONA_SABORES, slugSabor, slugsInactivos);
   const [sabor, setSabor] = useState(null);
   const [error, setError] = useState("");
 
@@ -453,7 +485,7 @@ function ArizonaModal({ item, precioBase, onConfirm, onClose }) {
           <button onClick={onClose} style={{ background:pill, border:"none", borderRadius:"50%", width:34, height:34, fontSize:18, cursor:"pointer", color:text, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
         </div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {ARIZONA_SABORES.map(s=>(
+          {saboresDisponibles.map(s=>(
             <button key={s} onClick={()=>setSabor(s)} style={chip(sabor===s)}>
               {s==="Mango"?"🥭":s==="Ponche"?"🍊":s==="Fresa Kiwi"?"🍓":s==="Sandía"?"🍉":"🌿"} {s}
               {sabor===s&&<span style={{ marginLeft:"auto", fontSize:16 }}>✓</span>}
@@ -474,7 +506,7 @@ function ArizonaModal({ item, precioBase, onConfirm, onClose }) {
 }
 
 
-function ProductoCard({ item, onAdd, carritoItems, inactivo }) {
+function ProductoCard({ item, onAdd, carritoItems, inactivo, slugsInactivos }) {
   const tamanos    = Object.keys(item.precios);
   const [tam, setTam]             = useState(tamanos[0]);
   const [conTocino, setConTocino] = useState(false);
@@ -505,13 +537,13 @@ function ProductoCard({ item, onAdd, carritoItems, inactivo }) {
   return (
     <>
       {showModal && esFresa && (
-        <ToppingModal item={item} tamano={tam} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
+        <ToppingModal item={item} tamano={tam} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} slugsInactivos={slugsInactivos} />
       )}
       {showModal && esEspecial && (
-        <ToppingModalOpcional item={item} tamano={tam} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
+        <ToppingModalOpcional item={item} tamano={tam} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} slugsInactivos={slugsInactivos} />
       )}
       {showModal && esArizona && (
-        <ArizonaModal item={item} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} />
+        <ArizonaModal item={item} precioBase={item.precios[tam]} onConfirm={handleToppingConfirm} onClose={()=>setShowModal(false)} slugsInactivos={slugsInactivos} />
       )}
       <div style={{ background:card, border:`1.5px solid ${border}`, borderRadius:18, padding:"16px", display:"flex", alignItems:"center", gap:14, opacity:inactivo?0.5:1 }}>
         <div style={{ width:72, height:72, borderRadius:14, background:pill, flexShrink:0, overflow:"hidden", position:"relative" }}>
@@ -566,7 +598,7 @@ function PasoMenu({ carrito, onAdd, onNext, slugsInactivos }) {
         <div key={key} style={{ marginBottom:28 }}>
           <div style={{ fontFamily:"system-ui,sans-serif", fontWeight:600, fontSize:12, textTransform:"uppercase", letterSpacing:"0.12em", color:muted, marginBottom:12 }}>{cat.emoji} {cat.label}</div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {cat.items.map(item=><ProductoCard key={item.id} item={item} onAdd={onAdd} carritoItems={carrito} inactivo={slugsInactivos.has(item.id)} />)}
+            {cat.items.map(item=><ProductoCard key={item.id} item={item} onAdd={onAdd} carritoItems={carrito} inactivo={slugsInactivos.has(item.id)} slugsInactivos={slugsInactivos} />)}
           </div>
         </div>
       ))}
